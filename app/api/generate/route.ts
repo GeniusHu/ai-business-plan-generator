@@ -115,9 +115,15 @@ MVP功能：${questions.mvpFeatures.join('、')}
 
 // 豆包AI集成
 async function callAIService(prompt: string, context: any) {
-  const DOUBAO_API_KEY = 'xxxx';
-  const DOUBAO_MODEL = 'doubao-1-5-pro-256k-250115';
-  const DOUBAO_URL = 'https://ark.cn-beijing.volces.com/api/v3/chat/completions';
+  const DOUBAO_API_KEY = process.env.DOUBAO_API_KEY;
+  const DOUBAO_MODEL = process.env.DOUBAO_MODEL || 'doubao-1-5-pro-256k-250115';
+  const DOUBAO_URL = process.env.DOUBAO_URL || 'https://ark.cn-beijing.volces.com/api/v3/chat/completions';
+
+  // 检查API密钥是否存在
+  if (!DOUBAO_API_KEY || DOUBAO_API_KEY === 'your-api-key-here') {
+    console.warn('豆包API密钥未配置，使用备用方案');
+    return generateBusinessModelCanvas(context.questions, context.projectType, context.industry);
+  }
 
   try {
     const response = await fetch(DOUBAO_URL, {
