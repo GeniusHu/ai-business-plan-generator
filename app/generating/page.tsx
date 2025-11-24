@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useProject } from '@/contexts/ProjectContext';
 import { BusinessModelCanvas } from '@/types';
+import { generateBusinessCanvas } from '@/lib/ai';
 
 interface GeneratingStep {
   id: number;
@@ -65,35 +66,89 @@ export default function GeneratingPage() {
   const { state, dispatch } = useProject();
 
   useEffect(() => {
-    // 模拟AI生成过程
-    const generateSteps = async () => {
-      for (let i = 0; i < generatingSteps.length; i++) {
-        setCurrentStep(i);
-
-        // 更新当前步骤状态为生成中
-        await new Promise(resolve => setTimeout(resolve, 800));
-
-        // 模拟每个步骤的处理时间
-        await new Promise(resolve => setTimeout(resolve, 1200 + Math.random() * 1000));
+    // 真实的AI生成过程
+    const generateWithAI = async () => {
+      if (!state.projectData?.questions) {
+        console.error('No questions data found');
+        return;
       }
 
-      // 生成完成，创建商业模式画布数据
-      const canvasData = generateBusinessModelCanvas();
-      console.log('Generated canvas data:', canvasData);
-      dispatch({ type: 'UPDATE_CANVAS', payload: canvasData });
-      dispatch({ type: 'SAVE_PROJECT' });
+      try {
+        // 设置生成状态
+        dispatch({ type: 'SET_GENERATING', payload: true });
 
-      setIsComplete(true);
+        // 步骤1: 分析产品信息
+        setCurrentStep(0);
+        await new Promise(resolve => setTimeout(resolve, 1000));
 
-      // 2秒后跳转到画布页面
-      setTimeout(() => {
-        dispatch({ type: 'SET_STEP', payload: 'canvas' });
-        router.push('/canvas');
-      }, 2000);
+        // 步骤2-5: 模拟中间步骤
+        for (let i = 1; i < 5; i++) {
+          setCurrentStep(i);
+          await new Promise(resolve => setTimeout(resolve, 800));
+        }
+
+        // 步骤6: 调用豆包AI生成商业模式画布
+        setCurrentStep(5);
+        const { questions } = state.projectData;
+
+        const aiResponse = await generateBusinessCanvas(
+          questions.productDescription,
+          questions.targetUsers,
+          questions.painPoints,
+          questions.mvpFeatures,
+          questions.revenueModel
+        );
+
+        if (aiResponse.success && aiResponse.content) {
+          // 解析AI返回的JSON数据
+          let canvasData: BusinessModelCanvas;
+          try {
+            canvasData = JSON.parse(aiResponse.content);
+          } catch (parseError) {
+            console.warn('Failed to parse AI response, using fallback:', parseError);
+            // 如果解析失败，使用备用逻辑
+            canvasData = generateBusinessModelCanvas();
+          }
+
+          console.log('AI Generated canvas data:', canvasData);
+
+          // 更新状态
+          dispatch({ type: 'UPDATE_CANVAS', payload: canvasData });
+          dispatch({ type: 'SAVE_PROJECT' });
+
+          setIsComplete(true);
+
+          // 2秒后跳转到画布页面
+          setTimeout(() => {
+            dispatch({ type: 'SET_STEP', payload: 'canvas' });
+            router.push('/canvas');
+          }, 2000);
+        } else {
+          throw new Error(aiResponse.error || 'AI生成失败');
+        }
+
+      } catch (error) {
+        console.error('AI生成失败:', error);
+
+        // AI失败时使用备用逻辑
+        console.log('使用备用生成逻辑');
+        const canvasData = generateBusinessModelCanvas();
+        dispatch({ type: 'UPDATE_CANVAS', payload: canvasData });
+        dispatch({ type: 'SAVE_PROJECT' });
+
+        setIsComplete(true);
+
+        setTimeout(() => {
+          dispatch({ type: 'SET_STEP', payload: 'canvas' });
+          router.push('/canvas');
+        }, 2000);
+      } finally {
+        dispatch({ type: 'SET_GENERATING', payload: false });
+      }
     };
 
-    generateSteps();
-  }, [dispatch, router]);
+    generateWithAI();
+  }, [dispatch, router, state.projectData]);
 
   // 模拟生成商业模式画布数据
   const generateBusinessModelCanvas = (): BusinessModelCanvas => {

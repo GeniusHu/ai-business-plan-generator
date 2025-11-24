@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/Button';
 import { useProject } from '@/contexts/ProjectContext';
@@ -60,97 +60,141 @@ const onboardingSteps = [
 
 export default function OnboardingPage() {
   const [currentStep, setCurrentStep] = useState(0);
+  const [touchStart, setTouchStart] = useState(0);
+  const [touchEnd, setTouchEnd] = useState(0);
+  const containerRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
   const { dispatch } = useProject();
 
-  const handleNext = () => {
-    if (currentStep < onboardingSteps.length - 1) {
-      setCurrentStep(currentStep + 1);
-    } else {
-      handleComplete();
-    }
+  // Swipe handlers
+  const handleTouchStart = (e: React.TouchEvent) => {
+    setTouchEnd(0);
+    setTouchStart(e.targetTouches[0].clientX);
   };
 
-  const handlePrevious = () => {
-    if (currentStep > 0) {
+  const handleTouchMove = (e: React.TouchEvent) => {
+    setTouchEnd(e.targetTouches[0].clientX);
+  };
+
+  const handleTouchEnd = () => {
+    if (!touchStart || !touchEnd) return;
+
+    const distance = touchStart - touchEnd;
+    const isLeftSwipe = distance > 50;
+    const isRightSwipe = distance < -50;
+
+    if (isLeftSwipe && currentStep < onboardingSteps.length - 1) {
+      setCurrentStep(currentStep + 1);
+    }
+
+    if (isRightSwipe && currentStep > 0) {
       setCurrentStep(currentStep - 1);
     }
   };
 
+  // Keyboard navigation
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'ArrowRight' && currentStep < onboardingSteps.length - 1) {
+        setCurrentStep(currentStep + 1);
+      } else if (e.key === 'ArrowLeft' && currentStep > 0) {
+        setCurrentStep(currentStep - 1);
+      } else if (e.key === 'Enter' && currentStep === onboardingSteps.length - 1) {
+        handleComplete();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [currentStep]);
+
   const handleComplete = () => {
-    dispatch({ type: 'SET_STEP', payload: 'project-type' });
-    router.push('/project-type');
+    // 跳转到行业选择页面，不再经过项目类型选择
+    dispatch({ type: 'SET_STEP', payload: 'industry' });
+    router.push('/industry');
   };
 
   const handleSkip = () => {
     handleComplete();
   };
 
-  const currentData = onboardingSteps[currentStep];
+  const handleDotClick = (index: number) => {
+    setCurrentStep(index);
+  };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-white to-gray-50 flex flex-col">
-      {/* 顶部进度条 */}
+    <div
+      ref={containerRef}
+      className="min-h-screen bg-gradient-to-b from-white to-gray-50 flex flex-col overflow-hidden"
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
+    >
+      {/* 顶部进度指示器 */}
       <div className="flex justify-center pt-8 px-4">
         <div className="flex space-x-2">
           {onboardingSteps.map((_, index) => (
-            <div
+            <button
               key={index}
-              className={`h-1 rounded-full transition-all duration-300 ${
-                index <= currentStep
+              onClick={() => handleDotClick(index)}
+              className={`h-2 rounded-full transition-all duration-300 ${
+                index === currentStep
                   ? 'w-8 bg-blue-600'
-                  : 'w-2 bg-gray-300'
+                  : 'w-2 bg-gray-300 hover:bg-gray-400'
               }`}
+              aria-label={`Go to step ${index + 1}`}
             />
           ))}
         </div>
       </div>
 
-      {/* 主要内容 */}
-      <div className="flex-1 flex flex-col items-center justify-center px-4 py-12">
-        <div className="max-w-lg w-full text-center">
-          {/* 图标区域 */}
-          <div className={`w-24 h-24 ${currentData.bgColor} rounded-3xl flex items-center justify-center mx-auto mb-8`}>
-            {currentData.icon}
-          </div>
+      {/* 主要内容 - 滑动容器 */}
+      <div className="flex-1 flex items-center justify-center px-4 py-12">
+        <div
+          className="flex transition-transform duration-300 ease-out"
+          style={{ transform: `translateX(-${currentStep * 100}%)` }}
+        >
+          {onboardingSteps.map((step) => (
+            <div
+              key={step.id}
+              className="w-full flex-shrink-0 flex flex-col items-center justify-center px-4"
+              style={{ width: '100vw', maxWidth: '100%' }}
+            >
+              <div className="max-w-lg w-full text-center">
+                {/* 图标区域 */}
+                <div className={`w-24 h-24 ${step.bgColor} rounded-3xl flex items-center justify-center mx-auto mb-8`}>
+                  {step.icon}
+                </div>
 
-          {/* 标题区域 */}
-          <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-2">
-            {currentData.title}
-          </h1>
+                {/* 标题区域 */}
+                <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-2">
+                  {step.title}
+                </h1>
 
-          <h2 className="text-xl md:text-2xl font-semibold text-blue-600 mb-6">
-            {currentData.subtitle}
-          </h2>
+                <h2 className="text-xl md:text-2xl font-semibold text-blue-600 mb-6">
+                  {step.subtitle}
+                </h2>
 
-          {/* 描述 */}
-          <p className="text-lg text-gray-600 mb-12 leading-relaxed">
-            {currentData.description}
-          </p>
+                {/* 描述 */}
+                <p className="text-lg text-gray-600 mb-12 leading-relaxed">
+                  {step.description}
+                </p>
 
-          {/* 插图区域 */}
-          <div className="flex justify-center mb-12">
-            <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-200">
-              {currentData.illustration}
+                {/* 插图区域 */}
+                <div className="flex justify-center mb-12">
+                  <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-200">
+                    {step.illustration}
+                  </div>
+                </div>
+              </div>
             </div>
-          </div>
+          ))}
         </div>
       </div>
 
       {/* 底部按钮 */}
-      <div className="px-4 py-8">
-        <div className="max-w-lg w-full mx-auto flex flex-col sm:flex-row gap-4 justify-center">
-          {/* 返回按钮 - 除第一步外都显示 */}
-          {currentStep > 0 && (
-            <Button
-              variant="outline"
-              onClick={handlePrevious}
-              className="w-full sm:w-auto"
-            >
-              上一步
-            </Button>
-          )}
-
+      <div className="px-4 py-8 bg-white/80 backdrop-blur-sm border-t border-gray-100">
+        <div className="max-w-lg w-full mx-auto flex flex-col sm:flex-row gap-4 justify-center items-center">
           {/* 跳过链接 */}
           {currentStep < onboardingSteps.length - 1 && (
             <button
@@ -163,12 +207,19 @@ export default function OnboardingPage() {
 
           {/* 开始创建按钮 */}
           <Button
-            onClick={handleNext}
+            onClick={currentStep === onboardingSteps.length - 1 ? handleComplete : () => setCurrentStep(currentStep + 1)}
             className="w-full sm:w-auto px-8"
           >
             {currentStep === onboardingSteps.length - 1 ? '开始创建' : '下一步'}
             <ChevronRight className="w-5 h-5 ml-1" />
           </Button>
+        </div>
+
+        {/* 滑动提示 */}
+        <div className="text-center mt-4">
+          <p className="text-sm text-gray-400">
+            {currentStep < onboardingSteps.length - 1 ? '← 左右滑动切换页面 →' : '按 Enter 或点击按钮开始'}
+          </p>
         </div>
       </div>
     </div>

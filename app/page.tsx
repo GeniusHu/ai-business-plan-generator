@@ -1,38 +1,47 @@
-'use client';
+'use client';  // 声明此组件为客户端组件，需要浏览器环境
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/Button';
 import { useProject } from '@/contexts/ProjectContext';
 
+/**
+ * 启动页面组件
+ * 显示应用Logo、介绍信息，并提供自动倒计时跳转功能
+ * 类似于Android应用启动时的SplashScreen
+ */
 export default function SplashPage() {
-  const [countdown, setCountdown] = useState(3);
-  const router = useRouter();
-  const { dispatch } = useProject();
+  const [countdown, setCountdown] = useState(3);        // 倒计时状态（3秒）
+  const router = useRouter();                           // Next.js路由实例
+  const { dispatch } = useProject();                   // 获取状态更新函数
 
+  // 倒计时逻辑：3秒后自动跳转到引导页面
   useEffect(() => {
-    // 3秒倒计时自动跳转
     if (countdown > 0) {
       const timer = setTimeout(() => {
         setCountdown(countdown - 1);
-      }, 1000);
-      return () => clearTimeout(timer);
+      }, 1000);                                      // 1000毫秒 = 1秒
+      return () => clearTimeout(timer);               // 清理定时器
     } else {
-      handleStart();
+      handleStart();                                  // 倒计时结束，开始应用流程
     }
-  }, [countdown]);
+  }, [countdown]);                                    // 依赖数组：countdown变化时重新执行
 
+  /**
+   * 开始应用的函数
+   * 更新状态并跳转到引导页面
+   * 类似于Android中启动下一个Activity
+   */
   const handleStart = () => {
-    dispatch({ type: 'SET_STEP', payload: 'onboarding' });
-    router.push('/onboarding');
+    dispatch({ type: 'SET_STEP', payload: 'industry' });
+    router.push('/industry');
   };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-900 via-blue-800 to-slate-900 flex flex-col items-center justify-center px-4">
-      {/* Logo 区域 */}
+      {/* Logo 和品牌信息区域 */}
       <div className="text-center mb-12">
         <div className="mb-8">
-          {/* 简单的Logo设计 */}
           <div className="w-20 h-20 bg-white rounded-2xl flex items-center justify-center mx-auto shadow-2xl">
             <span className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
               AI
@@ -40,7 +49,6 @@ export default function SplashPage() {
           </div>
         </div>
 
-        {/* Slogan */}
         <h1 className="text-3xl md:text-4xl font-bold text-white mb-4 leading-tight">
           一句话生成<br />
           <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-300 to-purple-300">
@@ -53,13 +61,13 @@ export default function SplashPage() {
         </p>
       </div>
 
-      {/* 装饰性元素 */}
+      {/* 背景装饰元素 */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute top-1/4 left-1/4 w-64 h-64 bg-blue-500 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-pulse"></div>
         <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-purple-500 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-pulse delay-700"></div>
       </div>
 
-      {/* 快速开始按钮 */}
+      {/* 开始按钮区域 */}
       <div className="relative z-10">
         <Button
           size="lg"

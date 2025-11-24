@@ -8,6 +8,7 @@ import { useProject } from '@/contexts/ProjectContext';
 import { ChevronLeft, ChevronRight, Lightbulb, Target, Zap, Settings, DollarSign } from 'lucide-react';
 import { industries, revenueModels, mvpFeatures } from '@/data/industries';
 import { CoreQuestions } from '@/types';
+import { getRecommendations } from '@/lib/ai';
 
 interface QuestionData {
   id: number;

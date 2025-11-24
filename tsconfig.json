@@ -1,34 +1,73 @@
 {
+  // TypeScript编译器配置文件 - 相当于Android中的build.gradle(gradle version)和compileSdk版本配置
   "compilerOptions": {
+    // 编译目标版本 - 指定TypeScript代码编译成哪个版本的JavaScript
+    // ES2017: 2017年发布的ECMAScript标准，支持async/await等现代JavaScript特性
     "target": "ES2017",
+
+    // 编译时可用的库文件 - 定义JavaScript运行环境的API
+    // dom: 浏览器DOM API（类似Android的View系统）
+    // dom.iterable: DOM可迭代API（如forEach、map等）
+    // esnext: 最新的ECMAScript特性
     "lib": ["dom", "dom.iterable", "esnext"],
+
+    // 允许编译JavaScript文件 - 让TypeScript能够处理.js文件
     "allowJs": true,
+
+    // 跳过库文件的类型检查 - 提高编译速度，不检查node_modules中的类型定义
     "skipLibCheck": true,
+
+    // 启用严格模式 - 开启所有严格类型检查选项（类似Android的strict模式）
     "strict": true,
+
+    // 不生成输出文件 - 只进行类型检查，不编译JavaScript文件（Next.js会自己处理）
     "noEmit": true,
+
+    // 启用ES模块互操作性 - 允许CommonJS和ES模块之间的互相导入
     "esModuleInterop": true,
+
+    // 模块系统 - 使用ES Next模块系统（支持tree shaking等优化）
     "module": "esnext",
+
+    // 模块解析策略 - 使用bundler模式（让打包工具处理模块解析）
     "moduleResolution": "bundler",
+
+    // 允许导入JSON文件 - 类似Android中的raw资源文件
     "resolveJsonModule": true,
+
+    // 独立模块编译 - 每个文件必须能够独立编译（提高缓存效率）
     "isolatedModules": true,
+
+    // JSX语法支持 - 使用React 17+的新JSX转换语法
     "jsx": "react-jsx",
+
+    // 增量编译 - 保存编译信息，下次编译时只重新编译变更的文件（提高编译速度）
     "incremental": true,
+
+    // TypeScript插件配置
     "plugins": [
       {
-        "name": "next"
+        "name": "next"                // Next.js提供的TypeScript插件
       }
     ],
+
+    // 路径映射配置 - 设置模块导入的别名（类似Android中的依赖重定向）
+    // @/*: 可以用@/来代表当前目录的任何路径
     "paths": {
       "@/*": ["./*"]
     }
   },
+
+  // 包含的文件类型 - 指定哪些文件需要被TypeScript编译器处理
   "include": [
-    "next-env.d.ts",
-    "**/*.ts",
-    "**/*.tsx",
-    ".next/types/**/*.ts",
-    ".next/dev/types/**/*.ts",
-    "**/*.mts"
+    "next-env.d.ts",                // Next.js提供的环境类型定义
+    "**/*.ts",                      // 所有TypeScript文件
+    "**/*.tsx",                     // 所有React TypeScript文件
+    ".next/types/**/*.ts",          // Next.js生成的类型文件
+    ".next/dev/types/**/*.ts",      // Next.js开发模式类型文件
+    "**/*.mts"                      // 所有ES模块TypeScript文件
   ],
-  "exclude": ["node_modules"]
+
+  // 排除的目录 - 指定哪些目录不需要TypeScript处理
+  "exclude": ["node_modules"]       // 排除node_modules目录（第三方库）
 }
