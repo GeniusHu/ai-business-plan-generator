@@ -35,6 +35,12 @@ export async function callDoubaoAPI(messages: AIMessage[]): Promise<AIResponse> 
 
     // 验证配置是否存在
     if (!apiKey || !model || !apiUrl) {
+      console.log('API配置检查:', {
+        hasKey: !!apiKey,
+        hasModel: !!model,
+        hasUrl: !!apiUrl,
+        model: model
+      });
       return {
         success: false,
         error: '豆包API配置缺失'

@@ -217,11 +217,12 @@ export default function ProfilePage() {
         {savedProjects.length > 0 ? (
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
             {savedProjects.map((project) => (
-              <Card
+              <div
                 key={project.id}
                 className="cursor-pointer transition-all duration-300 hover:shadow-md hover:border-gray-300"
                 onClick={() => handleOpenProject(project.id)}
               >
+                <Card>
                 <CardHeader>
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
@@ -299,6 +300,7 @@ export default function ProfilePage() {
                   </div>
                 </CardContent>
               </Card>
+              </div>
             ))}
           </div>
         ) : (

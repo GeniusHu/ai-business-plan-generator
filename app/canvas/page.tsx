@@ -77,7 +77,7 @@ export default function CanvasPage() {
           '运营人员成本',
           '客户服务成本'
         ],
-        revenueStreams: questions?.revenueModel?.length > 0 ? questions.revenueModel : ['广告收入', '增值服务']
+        revenueStreams: questions?.revenueModel && questions.revenueModel.length > 0 ? questions.revenueModel : ['广告收入', '增值服务']
       };
 
       console.log('Using fallback canvas data:', fallbackCanvas);
@@ -112,7 +112,7 @@ export default function CanvasPage() {
 
   
   const handleCellClick = (cell: CanvasCell) => {
-    const content = canvas[cell.field].join('\\n');
+    const content = canvas?.[cell.field]?.join('\\n') || '';
     setEditContent(content);
     setEditingCell(cell.id);
     setIsEditing(true);
@@ -132,7 +132,7 @@ export default function CanvasPage() {
     const updatedCanvas = {
       ...canvas,
       [cell.field]: updatedContent
-    };
+    } as BusinessModelCanvas;
 
     dispatch({ type: 'UPDATE_CANVAS', payload: updatedCanvas });
     dispatch({ type: 'SAVE_PROJECT' });
@@ -153,7 +153,7 @@ export default function CanvasPage() {
   };
 
   const renderCanvasContent = (cell: CanvasCell) => {
-    const content = canvas[cell.field];
+    const content = canvas?.[cell.field] || [];
     if (content.length === 0) {
       return (
         <div className="text-gray-400 text-center">

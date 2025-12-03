@@ -200,21 +200,44 @@ export default function IndustryPage() {
   // 如果还没选择行业，显示行业选择界面
   if (!selectedIndustry) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-white to-gray-50 py-12 px-4">
-        <div className="max-w-6xl mx-auto">
+      <div className="min-h-screen relative overflow-hidden">
+        {/* 高质量背景图片 */}
+        <div className="absolute inset-0">
+          <div
+            className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+            style={{
+              backgroundImage: `url("https://images.unsplash.com/photo-1551288049-bebda4e38f71?q=80&w=2940&auto=format&fit=crop")`
+            }}
+          ></div>
+
+          {/* 渐变遮罩层 */}
+          <div className="absolute inset-0 bg-gradient-to-br from-blue-900/70 via-indigo-900/70 to-purple-900/80"></div>
+
+          {/* 动态光效 */}
+          <div className="absolute top-20 left-20 w-72 h-72 bg-blue-400 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-pulse"></div>
+          <div className="absolute top-40 right-20 w-72 h-72 bg-purple-400 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-pulse delay-300"></div>
+          <div className="absolute bottom-20 left-1/2 w-96 h-96 bg-pink-400 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-pulse delay-700"></div>
+        </div>
+
+        <div className="max-w-7xl mx-auto relative z-10 py-12 px-4">
           {/* 标题区域 */}
-          <div className="text-center mb-12">
-            <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
-              你的产品属于哪个行业？
+          <div className="text-center mb-16">
+            <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-blue-500 to-purple-600 rounded-2xl mb-6 shadow-lg">
+              <span className="text-2xl font-bold text-white">🎯</span>
+            </div>
+            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-gray-900 mb-6">
+              <span className="bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 bg-clip-text text-transparent">
+                选择你的行业领域
+              </span>
             </h1>
-            <p className="text-lg text-gray-600">
-              选择行业后，我们将为你提供针对性的示例和模板
+            <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+              告诉我们你的产品属于哪个行业，我们将为你提供专业的示例和定制化的商业计划模板
             </p>
           </div>
 
           {/* 行业选择网格 */}
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
-            {industries.map((industry) => (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-16">
+            {industries.map((industry, index) => (
               <button
                 key={industry.id}
                 onClick={() => {
@@ -222,13 +245,61 @@ export default function IndustryPage() {
                   params.set('industry', industry.id);
                   router.push(`/industry?${params.toString()}`);
                 }}
-                className="p-6 border-2 border-gray-200 rounded-xl hover:border-blue-300 hover:shadow-lg transition-all duration-300 text-center"
+                className={`group relative p-8 bg-white rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-500 transform hover:-translate-y-2 border border-gray-100 hover:border-blue-200 text-left overflow-hidden ${
+                  index % 3 === 0 ? 'md:col-span-2 lg:col-span-1' : ''
+                }`}
+                style={{
+                  animationDelay: `${index * 100}ms`
+                }}
               >
-                <div className="text-4xl mb-3">{industry.icon}</div>
-                <h3 className="font-semibold text-gray-900 mb-2">{industry.name}</h3>
-                <p className="text-sm text-gray-600">{industry.description}</p>
+                {/* 背景渐变 */}
+                <div className="absolute inset-0 bg-gradient-to-br from-blue-50/50 to-purple-50/50 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+
+                {/* 内容 */}
+                <div className="relative z-10">
+                  {/* 图标 */}
+                  <div className="w-16 h-16 bg-gradient-to-r from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300 shadow-lg">
+                    <span className="text-3xl">{industry.icon}</span>
+                  </div>
+
+                  {/* 标题 */}
+                  <h3 className="text-2xl font-bold text-gray-900 mb-3">
+                    {industry.name}
+                  </h3>
+
+                  {/* 描述 */}
+                  <p className="text-gray-600 mb-6 leading-relaxed">
+                    {industry.description}
+                  </p>
+
+                  {/* 特性标签 */}
+                  <div className="flex flex-wrap gap-2">
+                    {industry.targetUsers.slice(0, 3).map((user, i) => (
+                      <span
+                        key={i}
+                        className="inline-block px-3 py-1 bg-blue-50 text-blue-600 text-sm rounded-full"
+                      >
+                        {user}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+
+                {/* 悬停指示器 */}
+                <div className="absolute bottom-4 right-4 w-10 h-10 bg-blue-600 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                  </svg>
+                </div>
               </button>
             ))}
+          </div>
+
+          {/* 底部提示 */}
+          <div className="text-center">
+            <p className="text-gray-500 text-sm">
+              💡 提示：选择最接近你产品行业的类别，AI将为你提供更精准的分析和建议
+            </p>
           </div>
         </div>
       </div>
@@ -239,22 +310,40 @@ export default function IndustryPage() {
   const industryName = industries.find(i => i.id === selectedIndustry)?.name || '';
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-white to-gray-50 py-8">
-      <div className="max-w-4xl mx-auto px-4">
+    <div className="min-h-screen bg-gradient-to-br from-white via-blue-50/50 to-purple-50/50 relative">
+      {/* 背景装饰 */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute -top-40 -right-40 w-80 h-80 bg-gradient-to-br from-blue-200 to-purple-200 rounded-full opacity-20 blur-3xl"></div>
+        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-gradient-to-br from-pink-200 to-indigo-200 rounded-full opacity-20 blur-3xl"></div>
+        <div className="absolute top-1/2 left-1/3 w-60 h-60 bg-gradient-to-br from-yellow-200 to-green-200 rounded-full opacity-15 blur-2xl"></div>
+      </div>
+
+      <div className="max-w-5xl mx-auto relative z-10 py-8 px-4">
         {/* 头部信息 */}
-        <div className="mb-8">
-          <div className="flex items-center justify-between mb-4">
-            <h1 className="text-2xl font-bold text-gray-900">
-              产品构思填写
-            </h1>
+        <div className="mb-8 bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg p-6 border border-white/50">
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
             <div className="flex items-center gap-4">
-              <span className="text-sm text-gray-600">
-                行业：{industryName}
-              </span>
+              <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-purple-600 rounded-xl flex items-center justify-center shadow-md">
+                <span className="text-xl font-bold text-white">{STEPS[currentStep - 1].icon}</span>
+              </div>
+              <div>
+                <h1 className="text-2xl lg:text-3xl font-bold text-gray-900">
+                  产品构思填写
+                </h1>
+                <p className="text-sm text-gray-600 mt-1">
+                  正在完善你的 <span className="font-semibold text-blue-600">{industryName}</span> 项目
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-4">
+              <div className="hidden sm:block text-center">
+                <p className="text-xs text-gray-500">当前步骤</p>
+                <p className="text-lg font-bold text-gray-900">{currentStep}/{STEPS.length}</p>
+              </div>
               <Button
                 variant="outline"
                 onClick={saveDraft}
-                className="flex items-center gap-2"
+                className="flex items-center gap-2 bg-white/80 backdrop-blur-sm border-gray-200 hover:bg-white hover:border-blue-300 transition-all"
               >
                 <Save className="w-4 h-4" />
                 保存草稿
@@ -263,11 +352,13 @@ export default function IndustryPage() {
           </div>
 
           {/* 进度条 */}
-          <ProgressBar
-            currentStep={currentStep}
-            totalSteps={STEPS.length}
-            labels={STEPS.map(step => step.title)}
-          />
+          <div className="mt-6">
+            <ProgressBar
+              currentStep={currentStep}
+              totalSteps={STEPS.length}
+              labels={STEPS.map(step => step.title)}
+            />
+          </div>
         </div>
 
         {/* 当前步骤输入 */}

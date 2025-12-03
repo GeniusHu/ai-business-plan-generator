@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/Button';
 import { useProject } from '@/contexts/ProjectContext';
 import { ChatMessage, ChatSession, ProductInfo } from '@/types';
+import { analyzeProductCompleteness, generateNextQuestion } from '@/lib/product-analysis';
 import { Send, Download, CheckCircle, AlertCircle, Clock } from 'lucide-react';
 
 export default function ChatPage() {
@@ -70,41 +71,43 @@ export default function ChatPage() {
     setIsLoading(true);
 
     try {
-      // 模拟API调用
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      // 调用AI分析API
+      const response = await fetch('/api/ai/analyze', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(info),
+      });
 
-      // 模拟AI分析结果
-      const analysis = {
-        completeness: 65,
-        missingAspects: [
-          info.solution.trim() ? '' : '解决方案需要更详细',
-          info.revenueModel.trim() ? '' : '盈利模式需要具体化',
-          info.targetUsers.trim() ? '' : '用户痛点分析不够深入'
-        ].filter(Boolean),
-        recommendations: [
-          '请详细说明你的产品如何解决用户的核心痛点',
-          '建议分析你的盈利模式的可行性和竞争优势',
-          '可以补充说明产品的技术实现方案和开发难度'
-        ],
-        isReadyToGenerate: false
-      };
+      const result = await response.json();
 
+      if (!result.success) {
+        throw new Error(result.error || 'AI分析失败');
+      }
+
+      const analysis = result.analysis;
       setAiAnalysis(analysis);
 
       // 添加AI第一条消息
       const firstMessage: ChatMessage = {
         id: `ai_${Date.now()}`,
         role: 'assistant',
-        content: `你好！我已经分析了你的产品构思：
+        content: `你好！我是你的AI产品顾问。我已经仔细分析了你的产品构思：
 
 📊 **分析结果：**
-- 完整度：${analysis.completenessity}%
-- 需要补充：${analysis.missingAspects.join('、') || '暂无'}
+- 完整度评分：${analysis.completeness}%
+- 需要补充的方面：${analysis.missingAspects.length > 0 ? analysis.missingAspects.join('、') : '暂无'}
 
-💡 **建议：**
-${analysis.recommendations.map(rec => `• ${rec}`).join('\n')}
+💡 **改进建议：**
+${analysis.recommendations.map((rec: string) => `• ${rec}`).join('\n')}
 
-让我们开始深入探讨你的产品吧！请先告诉我，你觉得你的产品最核心的竞争优势是什么？`,
+${analysis.isReadyToGenerate ?
+  '✅ 你的产品构思已经相当完整，可以直接生成商业计划了！如果你觉得信息已经足够，可以点击下方按钮开始生成。' :
+  '让我们通过对话来完善你的产品构思，让商业计划更加精准和实用。'
+}
+
+让我从最关键的问题开始：`,
         timestamp: new Date().toISOString()
       };
 
@@ -117,7 +120,7 @@ ${analysis.recommendations.map(rec => `• ${rec}`).join('\n')}
       const errorMessage: ChatMessage = {
         id: `ai_${Date.now()}`,
         role: 'assistant',
-        content: '抱歉，分析过程中出现了问题。不过我们可以继续讨论你的产品构思。请告诉我，你的产品主要解决什么问题？',
+        content: '抱歉，AI分析服务暂时不可用。不过我们可以继续完善你的产品构思。请告诉我，你的产品主要解决用户的什么问题？',
         timestamp: new Date().toISOString()
       };
       setMessages([errorMessage]);
@@ -149,25 +152,34 @@ ${analysis.recommendations.map(rec => `• ${rec}`).join('\n')}
     setIsLoading(true);
 
     try {
-      // 模拟AI回复
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      // 获取对话历史
+      const conversationHistory = messages
+        .filter(m => m.role === 'user')
+        .map(m => m.content);
 
-      // 生成AI回复（简单模拟）
-      let aiResponse = '';
-      const responses = [
-        '这是个很有趣的想法！你能详细说明一下这个功能是如何实现的吗？',
-        '很好！那么你的目标用户群体主要是哪些人？他们最看重产品的哪些特性？',
-        '明白了。关于技术实现，你考虑过开发成本和时间周期吗？',
-        '很好的补充！你觉得这个产品的市场前景如何？有考虑过竞争对手吗？',
-        '不错的想法。你计划如何验证这个产品概念的可行性？'
-      ];
+      // 调用AI聊天API
+      const response = await fetch('/api/ai/chat', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          productInfo: productInfo!,
+          aiAnalysis,
+          conversationHistory
+        }),
+      });
 
-      aiResponse = responses[Math.floor(Math.random() * responses.length)];
+      const result = await response.json();
+
+      if (!result.success) {
+        throw new Error(result.error || 'AI回复失败');
+      }
 
       const assistantMessage: ChatMessage = {
         id: `ai_${Date.now()}`,
         role: 'assistant',
-        content: aiResponse,
+        content: result.response,
         timestamp: new Date().toISOString()
       };
 
@@ -176,17 +188,17 @@ ${analysis.recommendations.map(rec => `• ${rec}`).join('\n')}
       // 更新AI分析（模拟改进）
       setAiAnalysis(prev => ({
         ...prev,
-        completeness: Math.min(100, prev.completeness + 5),
-        isReadyToGenerate: Math.random() > 0.7 // 随机模拟准备完成
+        completeness: Math.min(100, prev.completeness + 3), // 每次对话提升3%
+        isReadyToGenerate: prev.completeness + 3 >= 80 // 基于完整度判断
       }));
 
     } catch (error) {
-      console.error('发送消息失败:', error);
+      console.error('AI回复失败:', error);
 
       const errorMessage: ChatMessage = {
         id: `ai_${Date.now()}`,
         role: 'assistant',
-        content: '抱歉，我遇到了一些问题。让我们继续讨论你的产品吧！',
+        content: '抱歉，AI服务暂时不可用。让我们继续讨论你的产品构思。你能详细说明一下产品的核心功能吗？',
         timestamp: new Date().toISOString()
       };
 
@@ -232,32 +244,59 @@ ${analysis.recommendations.map(rec => `• ${rec}`).join('\n')}
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-white to-gray-50 py-8">
-      <div className="max-w-4xl mx-auto px-4">
+    <div className="min-h-screen relative overflow-hidden">
+      {/* 高质量背景图片 */}
+      <div className="absolute inset-0">
+        <div
+          className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+          style={{
+            backgroundImage: `url("https://images.unsplash.com/photo-1531297484001-80022131f5a1?q=80&w=2940&auto=format&fit=crop")`
+          }}
+        ></div>
+
+        {/* 渐变遮罩层 */}
+        <div className="absolute inset-0 bg-gradient-to-br from-slate-900/60 via-blue-900/60 to-purple-900/70"></div>
+
+        {/* 动态光效 */}
+        <div className="absolute top-20 right-10 w-72 h-72 bg-gradient-to-br from-blue-300 to-purple-300 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-pulse"></div>
+        <div className="absolute bottom-20 left-10 w-64 h-64 bg-gradient-to-br from-green-300 to-cyan-300 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-pulse delay-500"></div>
+        <div className="absolute top-1/2 right-1/4 w-48 h-48 bg-gradient-to-br from-yellow-300 to-orange-300 rounded-full mix-blend-multiply filter blur-2xl opacity-15 animate-pulse delay-1000"></div>
+      </div>
+
+      <div className="max-w-5xl mx-auto relative z-10 py-8 px-4">
         {/* 头部 */}
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">
-              🤖 AI产品顾问
-            </h1>
-            <p className="text-gray-600 mt-1">
-              让我们深入探讨你的产品构思
-            </p>
+        <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-xl border border-white/50 p-6 mb-6">
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+            <div className="flex items-center gap-4">
+              <div className="w-16 h-16 bg-gradient-to-r from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center shadow-lg">
+                <span className="text-2xl">🤖</span>
+              </div>
+              <div>
+                <h1 className="text-2xl lg:text-3xl font-bold text-gray-900">
+                  AI产品顾问
+                </h1>
+                <p className="text-gray-600 mt-1">
+                  让我们通过对话完善你的产品构思
+                </p>
+              </div>
+            </div>
+            <Button
+              variant="outline"
+              onClick={handleExport}
+              className="flex items-center gap-2 bg-white/80 backdrop-blur-sm border-gray-200 hover:bg-white hover:border-blue-300 transition-all"
+            >
+              <Download className="w-4 h-4" />
+              导出记录
+            </Button>
           </div>
-          <Button
-            variant="outline"
-            onClick={handleExport}
-            className="flex items-center gap-2"
-          >
-            <Download className="w-4 h-4" />
-            导出记录
-          </Button>
         </div>
 
         {/* AI分析结果 */}
-        <div className="bg-white border-2 border-gray-200 rounded-xl p-6 mb-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-            <span className="mr-2">📊</span>
+        <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-xl border border-white/50 p-6 mb-6">
+          <h2 className="text-xl font-bold text-gray-900 mb-6 flex items-center">
+            <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg flex items-center justify-center mr-3">
+              <span className="text-white font-bold">📊</span>
+            </div>
             AI分析结果
           </h2>
 
@@ -304,30 +343,56 @@ ${analysis.recommendations.map(rec => `• ${rec}`).join('\n')}
         </div>
 
         {/* 对话区域 */}
-        <div className="bg-white border-2 border-gray-200 rounded-xl overflow-hidden">
+        <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-xl border border-white/50 overflow-hidden">
           {/* 消息列表 */}
-          <div className="h-96 overflow-y-auto p-6 space-y-4">
+          <div className="h-96 overflow-y-auto p-6 space-y-4 bg-gradient-to-b from-gray-50/50 to-white">
             {messages.length === 0 ? (
-              <div className="text-center text-gray-500 py-8">
-                <div className="animate-spin inline-block w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full mb-2"></div>
-                <p>AI正在分析你的产品构思...</p>
+              <div className="text-center py-12">
+                <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-blue-500 to-purple-600 rounded-2xl mb-4">
+                  <div className="animate-spin inline-block w-8 h-8 border-3 border-white/30 border-t-white rounded-full"></div>
+                </div>
+                <p className="text-gray-600 font-medium">AI正在分析你的产品构思...</p>
+                <p className="text-gray-500 text-sm mt-2">请稍候，我们正在为你生成专业的建议</p>
               </div>
             ) : (
-              messages.map((message) => (
+              messages.map((message, index) => (
                 <div
                   key={message.id}
-                  className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
+                  className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'} animate-fade-in`}
+                  style={{
+                    animationDelay: `${index * 50}ms`
+                  }}
                 >
-                  <div className={`max-w-xs lg:max-w-2xl px-4 py-3 rounded-lg ${
+                  <div className={`max-w-xs lg:max-w-3xl px-5 py-4 rounded-2xl shadow-lg transition-all duration-300 hover:shadow-xl ${
                     message.role === 'user'
-                      ? 'bg-blue-600 text-white'
-                      : 'bg-gray-100 text-gray-900'
+                      ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white'
+                      : 'bg-white border border-gray-200 text-gray-900'
                   }`}>
-                    <p className="whitespace-pre-wrap">{message.content}</p>
-                    <p className={`text-xs mt-1 ${
-                      message.role === 'user' ? 'text-blue-100' : 'text-gray-500'
+                    {/* 发送者标识 */}
+                    <div className="flex items-center mb-2">
+                      {message.role === 'user' ? (
+                        <span className="text-xs font-medium text-blue-100">你</span>
+                      ) : (
+                        <div className="flex items-center">
+                          <span className="text-xs font-medium text-gray-600">AI顾问</span>
+                          <div className="w-2 h-2 bg-green-500 rounded-full ml-2 animate-pulse"></div>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* 消息内容 */}
+                    <p className="whitespace-pre-wrap leading-relaxed">
+                      {message.content}
+                    </p>
+
+                    {/* 时间戳 */}
+                    <p className={`text-xs mt-3 ${
+                      message.role === 'user' ? 'text-blue-200' : 'text-gray-400'
                     }`}>
-                      {new Date(message.timestamp).toLocaleTimeString()}
+                      {new Date(message.timestamp).toLocaleTimeString('zh-CN', {
+                        hour: '2-digit',
+                        minute: '2-digit'
+                      })}
                     </p>
                   </div>
                 </div>
@@ -337,40 +402,68 @@ ${analysis.recommendations.map(rec => `• ${rec}`).join('\n')}
           </div>
 
           {/* 输入区域 */}
-          <div className="border-t border-gray-200 p-4">
+          <div className="border-t border-gray-200 p-4 bg-white/80 backdrop-blur-sm">
             <div className="flex gap-3">
               <textarea
                 value={inputValue}
                 onChange={(e) => setInputValue(e.target.value)}
                 onKeyPress={(e) => e.key === 'Enter' && !e.shiftKey && (e.preventDefault(), handleSend())}
-                placeholder="输入你的想法或问题..."
-                className="flex-1 resize-none border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                placeholder="描述你的想法，或者向AI询问任何关于产品的问题..."
+                className="flex-1 resize-none border border-gray-300 rounded-xl px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white/50 backdrop-blur-sm"
                 rows={2}
                 disabled={isLoading}
               />
               <Button
                 onClick={handleSend}
                 disabled={!inputValue.trim() || isLoading}
-                className="flex items-center gap-2 self-end"
+                className="flex items-center gap-2 self-end px-6 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
               >
                 <Send className="w-4 h-4" />
                 {isLoading ? '发送中...' : '发送'}
               </Button>
+            </div>
+
+            {/* 快捷输入提示 */}
+            <div className="mt-3 flex flex-wrap gap-2">
+              {[
+                "我的竞争对手有哪些？",
+                "如何验证市场需求？",
+                "我的技术难度如何？",
+                "盈利模式可行性？"
+              ].map((suggestion, index) => (
+                <button
+                  key={index}
+                  onClick={() => setInputValue(suggestion)}
+                  className="px-3 py-1 bg-gray-100 hover:bg-gray-200 text-gray-600 text-xs rounded-full transition-colors"
+                  disabled={isLoading}
+                >
+                  💡 {suggestion}
+                </button>
+              ))}
             </div>
           </div>
         </div>
 
         {/* 底部操作 */}
         {aiAnalysis.isReadyToGenerate && (
-          <div className="mt-6 text-center">
-            <Button
-              onClick={handleGenerate}
-              size="lg"
-              className="bg-green-600 hover:bg-green-700"
-            >
-              生成商业计划
-              <CheckCircle className="w-5 h-5 ml-2" />
-            </Button>
+          <div className="mt-8 text-center animate-bounce">
+            <div className="inline-block p-1 bg-gradient-to-r from-green-400 to-emerald-400 rounded-2xl shadow-lg">
+              <Button
+                onClick={handleGenerate}
+                size="lg"
+                className="bg-white text-green-600 hover:bg-green-50 px-8 py-4 text-lg font-bold shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:scale-105 rounded-xl"
+              >
+                <CheckCircle className="w-6 h-6 mr-3" />
+                生成专业商业计划
+                <div className="inline-flex items-center ml-2">
+                  <span className="text-green-500">→</span>
+                  <span className="text-green-500 animate-pulse">→</span>
+                </div>
+              </Button>
+            </div>
+            <p className="text-sm text-gray-600 mt-3">
+              ✨ 你的产品构思已经完善，可以开始生成高质量商业计划了！
+            </p>
           </div>
         )}
       </div>

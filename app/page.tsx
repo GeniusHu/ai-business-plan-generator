@@ -1,91 +1,190 @@
-'use client';  // 声明此组件为客户端组件，需要浏览器环境
+'use client';
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/Button';
 import { useProject } from '@/contexts/ProjectContext';
+import { Sparkles, ArrowRight, Play, Lightbulb, ClipboardList, Wrench } from 'lucide-react';
 
-/**
- * 启动页面组件
- * 显示应用Logo、介绍信息，并提供自动倒计时跳转功能
- * 类似于Android应用启动时的SplashScreen
- */
 export default function SplashPage() {
-  const [countdown, setCountdown] = useState(3);        // 倒计时状态（3秒）
-  const router = useRouter();                           // Next.js路由实例
-  const { dispatch } = useProject();                   // 获取状态更新函数
+  const [countdown, setCountdown] = useState(3);
+  const [isVisible, setIsVisible] = useState(false);
+  const router = useRouter();
+  const { dispatch } = useProject();
 
-  // 倒计时逻辑：3秒后自动跳转到引导页面
+  // 页面加载动画
   useEffect(() => {
-    if (countdown > 0) {
-      const timer = setTimeout(() => {
-        setCountdown(countdown - 1);
-      }, 1000);                                      // 1000毫秒 = 1秒
-      return () => clearTimeout(timer);               // 清理定时器
-    } else {
-      handleStart();                                  // 倒计时结束，开始应用流程
-    }
-  }, [countdown]);                                    // 依赖数组：countdown变化时重新执行
+    setIsVisible(true);
+  }, []);
 
-  /**
-   * 开始应用的函数
-   * 更新状态并跳转到引导页面
-   * 类似于Android中启动下一个Activity
-   */
+  // 倒计时逻辑
+  // useEffect(() => {
+  //   if (countdown > 0) {
+  //     const timer = setTimeout(() => {
+  //       setCountdown(countdown - 1);
+  //     }, 1000);
+  //     return () => clearTimeout(timer);
+  //   } else {
+  //     handleStart();
+  //   }
+  // }, [countdown]);
+
   const handleStart = () => {
     dispatch({ type: 'SET_STEP', payload: 'industry' });
     router.push('/industry');
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-900 via-blue-800 to-slate-900 flex flex-col items-center justify-center px-4">
-      {/* Logo 和品牌信息区域 */}
-      <div className="text-center mb-12">
-        <div className="mb-8">
-          <div className="w-20 h-20 bg-white rounded-2xl flex items-center justify-center mx-auto shadow-2xl">
-            <span className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-              AI
-            </span>
+    <div className="min-h-screen relative overflow-hidden">
+      {/* 高质量背景图片叠加渐变 */}
+      <div className="absolute inset-0">
+        {/* 使用Unsplash的免费高质量图片 */}
+        <div
+          className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+          style={{
+            backgroundImage: `url("https://images.unsplash.com/photo-1451187580459-43490279c0fa?q=80&w=2940&auto=format&fit=crop")`
+          }}
+        ></div>
+
+        {/* 渐变遮罩层 */}
+        <div className="absolute inset-0 bg-gradient-to-br from-indigo-900/80 via-purple-900/80 to-pink-900/80"></div>
+
+        {/* 动态光效层 */}
+        <div className="absolute inset-0">
+          <div className="absolute top-0 -left-1/4 w-1/2 h-1/2 bg-purple-500 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-pulse"></div>
+          <div className="absolute top-0 -right-1/4 w-1/2 h-1/2 bg-indigo-500 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-pulse delay-300"></div>
+          <div className="absolute -bottom-1/2 left-1/3 w-1/2 h-1/2 bg-pink-500 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-pulse delay-700"></div>
+          <div className="absolute bottom-0 right-1/3 w-1/3 h-1/3 bg-cyan-400 rounded-full mix-blend-multiply filter blur-2xl opacity-15 animate-pulse delay-1000"></div>
+        </div>
+
+        {/* 网格背景 */}
+        <div className="absolute inset-0 opacity-20">
+          <div
+            className="h-full w-full"
+            style={{
+              backgroundImage: `
+                linear-gradient(to right, rgba(255,255,255,0.1) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(255,255,255,0.1) 1px, transparent 1px)
+              `,
+              backgroundSize: '40px 40px'
+            }}
+          ></div>
+        </div>
+      </div>
+
+      {/* 主要内容 */}
+      <div className="relative z-10 min-h-screen flex flex-col items-center justify-center px-4 py-8">
+        {/* Logo 区域 */}
+        <div className={`transform transition-all duration-1000 ${isVisible ? 'translate-y-0 opacity-100' : '-translate-y-10 opacity-0'}`}>
+          <div className="relative mb-12">
+            {/* 发光效果 */}
+            <div className="absolute inset-0 bg-gradient-to-r from-blue-400 to-purple-600 rounded-3xl blur-xl opacity-50 animate-pulse"></div>
+
+            {/* Logo 容器 */}
+            <div className="relative w-24 h-24 bg-white/10 backdrop-blur-md rounded-3xl flex items-center justify-center shadow-2xl border border-white/20">
+              <div className="text-4xl font-bold bg-gradient-to-r from-white to-blue-200 bg-clip-text text-transparent">
+                AI
+              </div>
+            </div>
+
+            {/* 装饰元素 */}
+            <div className="absolute -top-2 -right-2 w-6 h-6 bg-yellow-400 rounded-full flex items-center justify-center animate-bounce">
+              <Sparkles className="w-4 h-4 text-white" />
+            </div>
+            <div className="absolute -bottom-1 -left-1 w-4 h-4 bg-green-400 rounded-full animate-pulse"></div>
+            <div className="absolute top-0 right-0 w-3 h-3 bg-red-400 rounded-full animate-ping"></div>
           </div>
         </div>
 
-        <h1 className="text-3xl md:text-4xl font-bold text-white mb-4 leading-tight">
-          一句话生成<br />
-          <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-300 to-purple-300">
-            小程序/APP商业计划书
-          </span>
-        </h1>
+        {/* 标题区域 */}
+        <div className={`text-center mb-8 max-w-3xl transform transition-all duration-1000 delay-300 ${isVisible ? 'translate-y-0 opacity-100' : 'translate-y-10 opacity-0'}`}>
+          <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold text-white mb-6 leading-tight">
+            <span className="block mb-2">有个好想法？</span>
+            <span className="bg-gradient-to-r from-blue-200 via-purple-200 to-pink-200 bg-clip-text text-transparent">
+              AI帮你变成可执行的产品方案
+            </span>
+          </h1>
 
-        <p className="text-blue-200 text-lg md:text-xl max-w-md mx-auto">
-          AI驱动，专为创业者打造的智能商业计划生成工具
-        </p>
-      </div>
-
-      {/* 背景装饰元素 */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-1/4 left-1/4 w-64 h-64 bg-blue-500 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-pulse"></div>
-        <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-purple-500 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-pulse delay-700"></div>
-      </div>
-
-      {/* 开始按钮区域 */}
-      <div className="relative z-10">
-        <Button
-          size="lg"
-          onClick={handleStart}
-          className="bg-white text-blue-900 hover:bg-blue-50 px-8 py-4 text-lg font-semibold shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:scale-105"
-        >
-          快速开始
-          <span className="ml-2 text-blue-600">
-            {countdown > 0 && `(${countdown}s)`}
-          </span>
-        </Button>
-
-        {countdown > 0 && (
-          <p className="text-center text-blue-200 mt-4 text-sm">
-            倒计时自动跳转...
+          <p className="text-lg md:text-xl text-blue-100/90 max-w-2xl mx-auto leading-relaxed">
+            不需要技术背景，AI智能分析你的想法
+            <br />
+            <span className="text-blue-200/80 text-base mt-2 block">
+              生成清晰的功能清单 + 手把手执行指南，让每个好想法都能落地
+            </span>
           </p>
-        )}
+        </div>
+
+        {/* 特性卡片 */}
+        <div className={`grid grid-cols-1 md:grid-cols-3 gap-6 mb-12 max-w-4xl w-full transform transition-all duration-1000 delay-500 ${isVisible ? 'translate-y-0 opacity-100' : 'translate-y-10 opacity-0'}`}>
+          <div className="bg-white/10 backdrop-blur-md rounded-2xl p-6 border border-white/20 hover:bg-white/15 transition-all duration-300 group">
+            <div className="flex items-center mb-4">
+              <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-blue-600 rounded-xl flex items-center justify-center mr-4 group-hover:scale-110 transition-transform">
+                <Lightbulb className="w-6 h-6 text-white" />
+              </div>
+              <h3 className="text-white font-semibold text-lg">💡 想法评估</h3>
+            </div>
+            <p className="text-blue-100/80 text-sm">AI智能分析你的产品构思可行性，避免走弯路</p>
+          </div>
+
+          <div className="bg-white/10 backdrop-blur-md rounded-2xl p-6 border border-white/20 hover:bg-white/15 transition-all duration-300 group">
+            <div className="flex items-center mb-4">
+              <div className="w-12 h-12 bg-gradient-to-r from-purple-500 to-purple-600 rounded-xl flex items-center justify-center mr-4 group-hover:scale-110 transition-transform">
+                <ClipboardList className="w-6 h-6 text-white" />
+              </div>
+              <h3 className="text-white font-semibold text-lg">📋 功能规划</h3>
+            </div>
+            <p className="text-blue-100/80 text-sm">生成详细的功能清单，知道要做什么</p>
+          </div>
+
+          <div className="bg-white/10 backdrop-blur-md rounded-2xl p-6 border border-white/20 hover:bg-white/15 transition-all duration-300 group">
+            <div className="flex items-center mb-4">
+              <div className="w-12 h-12 bg-gradient-to-r from-pink-500 to-pink-600 rounded-xl flex items-center justify-center mr-4 group-hover:scale-110 transition-transform">
+                <Wrench className="w-6 h-6 text-white" />
+              </div>
+              <h3 className="text-white font-semibold text-lg">🛠️ 执行指导</h3>
+            </div>
+            <p className="text-blue-100/80 text-sm">手把手教你从零开始，技术成本时间都搞定</p>
+          </div>
+        </div>
+
+        {/* 开始按钮区域 */}
+        <div className={`transform transition-all duration-1000 delay-700 ${isVisible ? 'translate-y-0 opacity-100' : 'translate-y-10 opacity-0'}`}>
+          <Button
+            size="lg"
+            onClick={handleStart}
+            className="bg-white text-indigo-900 hover:bg-blue-50 px-8 py-4 text-lg font-semibold shadow-2xl hover:shadow-blue-300/25 transition-all duration-300 transform hover:scale-105 border border-white/20 backdrop-blur-sm group"
+          >
+            <Play className="w-5 h-5 mr-2 group-hover:scale-110 transition-transform" />
+            💡 把想法变成产品
+            {/*<span className="ml-3 text-indigo-600">*/}
+            {/*  {countdown > 0 && `(${countdown}s)`}*/}
+            {/*</span>*/}
+            <ArrowRight className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform" />
+          </Button>
+
+          {/*{countdown > 0 && (*/}
+          {/*  <p className="text-center text-blue-200/80 mt-6 animate-pulse">*/}
+          {/*    <span className="inline-flex items-center">*/}
+          {/*      <span className="w-2 h-2 bg-blue-300 rounded-full mr-2 animate-ping"></span>*/}
+          {/*      系统将在 {countdown} 秒后自动开始...*/}
+          {/*    </span>*/}
+          {/*  </p>*/}
+          {/*)}*/}
+        </div>
+
+        {/* 底部装饰 */}
+        <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2">
+          <div className="flex space-x-2">
+            <div className="w-2 h-2 bg-white/40 rounded-full animate-pulse"></div>
+            <div className="w-2 h-2 bg-white/40 rounded-full animate-pulse delay-300"></div>
+            <div className="w-2 h-2 bg-white/40 rounded-full animate-pulse delay-700"></div>
+          </div>
+        </div>
       </div>
+
+      {/* 侧边装饰元素 */}
+      <div className="absolute top-20 right-10 w-20 h-20 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-full opacity-10 blur-2xl"></div>
+      <div className="absolute bottom-20 left-10 w-32 h-32 bg-gradient-to-br from-green-400 to-cyan-500 rounded-full opacity-10 blur-2xl"></div>
     </div>
   );
 }

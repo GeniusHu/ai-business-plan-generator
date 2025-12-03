@@ -97,7 +97,7 @@ export function debounce<T extends (...args: any[]) => any>(
 
     // 设置新的定时器，延迟执行原函数
     timeout = setTimeout(() => {
-      func.apply(this, args);                          // 使用apply保持this上下文
+      func(...args);                                   // 使用展开语法保持参数
     }, wait);
   };
 }
