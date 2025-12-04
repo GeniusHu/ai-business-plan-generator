@@ -20,47 +20,21 @@ export interface AIResponse {
 }
 
 /**
- * 调用豆包大模型API
- * 类似于Android中的Retrofit网络请求
+ * 调用豆包大模型API - 通过服务端API路由
+ * 避免客户端环境变量访问问题
  *
  * @param messages 消息列表
  * @returns AI响应结果
  */
 export async function callDoubaoAPI(messages: AIMessage[]): Promise<AIResponse> {
   try {
-    // 从环境变量获取配置
-    const apiKey = process.env.DOUBAO_API_KEY;
-    const model = process.env.DOUBAO_MODEL;
-    const apiUrl = process.env.DOUBAO_URL;
-
-    // 验证配置是否存在
-    if (!apiKey || !model || !apiUrl) {
-      console.log('API配置检查:', {
-        hasKey: !!apiKey,
-        hasModel: !!model,
-        hasUrl: !!apiUrl,
-        model: model
-      });
-      return {
-        success: false,
-        error: '豆包API配置缺失'
-      };
-    }
-
-    // 发送HTTP请求到豆包API
-    const response = await fetch(apiUrl, {
+    // 调用服务端AI API
+    const response = await fetch('/api/ai/generate', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${apiKey}`
       },
-      body: JSON.stringify({
-        model: model,
-        messages: messages,
-        temperature: 0.7,                       // 创造性：0.7（中等创造性）
-        max_tokens: 2000,                        // 最大token数
-        stream: false                            // 非流式响应
-      })
+      body: JSON.stringify({ messages }),
     });
 
     // 检查HTTP响应状态
@@ -75,18 +49,11 @@ export async function callDoubaoAPI(messages: AIMessage[]): Promise<AIResponse> 
     // 解析响应数据
     const data = await response.json();
 
-    // 检查响应格式
-    if (!data.choices || !data.choices[0] || !data.choices[0].message) {
-      return {
-        success: false,
-        error: 'API响应格式错误'
-      };
-    }
-
     // 返回成功结果
     return {
-      success: true,
-      content: data.choices[0].message.content.trim()
+      success: data.success,
+      content: data.content,
+      error: data.error
     };
 
   } catch (error) {

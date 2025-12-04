@@ -198,6 +198,14 @@ export interface AISuggestion {
   scenario: string;                             // 使用场景
   price: string;                                // 价格范围
   confidence: number;                          // AI置信度 0-100
+
+  // 世界级分析扩展字段
+  marketPotential?: number;                     // 市场潜力评估 1-10
+  competitionLevel?: number;                    // 竞争激烈程度 1-10
+  executionDifficulty?: number;                 // 执行难度 1-10
+  keyAdvantages?: string[];                     // 核心竞争优势
+  potentialRisks?: string[];                     // 潜在风险
+  estimatedMarketSize?: string;                 // 估算市场规模
 }
 
 /**

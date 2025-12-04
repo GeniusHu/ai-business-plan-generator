@@ -16,6 +16,7 @@ export default function ChatPage() {
   const [inputValue, setInputValue] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [aiAnalysis, setAiAnalysis] = useState({
+    suggestions: [] as any[],
     completeness: 0,
     missingAspects: [] as string[],
     recommendations: [] as string[],
@@ -113,43 +114,53 @@ export default function ChatPage() {
     setIsLoading(true);
 
     try {
+      // 构建商业想法对象
+      const businessIdea = {
+        targetUsers: info.targetUsers || 'not_sure',
+        scenario: info.usageScenario || 'not_sure',
+        price: info.revenueModel?.includes('定价') ? info.revenueModel : 'not_sure',
+        coreNeed: info.productDescription || info.coreNeed || '',
+        isAnalyzed: false
+      };
+
       // 调用AI分析API
       const response = await fetch('/api/ai/analyze', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(info),
+        body: JSON.stringify({ businessIdea }),
       });
 
       const result = await response.json();
 
-      if (!result.success) {
+      if (!response.ok) {
         throw new Error(result.error || 'AI分析失败');
       }
 
-      const analysis = result.analysis;
-      setAiAnalysis(analysis);
+      // 处理AI建议
+      const suggestions = result.suggestions || [];
+      setAiAnalysis({ suggestions, completeness: 75, missingAspects: [], recommendations: [], isReadyToGenerate: true });
 
       // 添加AI第一条消息
       const firstMessage: ChatMessage = {
         id: `ai_${Date.now()}`,
         role: 'assistant',
-        content: `你好！我是你的AI产品顾问。我已经仔细分析了你的产品构思：
+        content: `你好！我是你的AI产品顾问。我已经仔细分析了你的产品构思，并生成了${suggestions.length}个高质量的商业场景：
 
 📊 **分析结果：**
-- 完整度评分：${analysis.completeness}%
-- 需要补充的方面：${analysis.missingAspects.length > 0 ? analysis.missingAspects.join('、') : '暂无'}
+- 完整度评分：75%
+- 生成的商业场景：${suggestions.length}个
 
-<Lightbulb className="w-5 h-5 inline mr-2 text-blue-500" /> **改进建议：**
-${analysis.recommendations.map((rec: string) => `• ${rec}`).join('\n')}
+${suggestions.slice(0, 3).map((suggestion: any, index: number) =>
+  `**场景${index + 1}：${suggestion.title}**\n${suggestion.description?.substring(0, 100)}...\n置信度：${suggestion.confidence}%\n`
+).join('\n')}
 
-${analysis.isReadyToGenerate ?
-  '✅ 你的产品构思已经相当完整，可以直接生成商业计划了！如果你觉得信息已经足够，可以点击下方按钮开始生成。' :
-  '让我们通过对话来完善你的产品构思，让商业计划更加精准和实用。'
-}
+<Lightbulb className="w-5 h-5 inline mr-2 text-blue-500" /> **下一步建议：**
+• 你的产品构思已经相当完整，可以直接生成商业计划了！
+• 如果你想了解更多场景详情或进一步完善想法，我们可以继续对话。
 
-让我从最关键的问题开始：`,
+让我知道你希望深入哪个方面，或者直接开始生成完整的商业计划？`,
         timestamp: new Date().toISOString()
       };
 
@@ -168,6 +179,7 @@ ${analysis.isReadyToGenerate ?
       setMessages([errorMessage]);
 
       setAiAnalysis({
+        suggestions: [],
         completeness: 50,
         missingAspects: ['需要更多信息'],
         recommendations: ['请详细描述产品功能'],

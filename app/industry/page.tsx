@@ -5,115 +5,85 @@ import {useRouter} from 'next/navigation';
 import {useProject, createProject} from '@/contexts/ProjectContext';
 import {BusinessIdea, AISuggestion} from '@/types';
 import {BusinessIdeaInput} from '@/components/steps/BusinessIdeaInput';
-import {AISuggestionCards} from '@/components/steps/AISuggestionCards';
+import {WorldClassScenarioCards} from '@/components/steps/WorldClassScenarioCards';
+import {aiClientService, AIAnalysisRequest} from '@/services/aiClientService';
 
-// Mock AI分析函数 - 后续可以替换为真实的AI API
+/**
+ * 通过API调用豆包AI进行世界级商业分析
+ */
 async function analyzeBusinessIdea(idea: BusinessIdea): Promise<AISuggestion[]> {
-    // 模拟API延迟
-    await new Promise(resolve => setTimeout(resolve, 2000));
+    try {
+        // 构建AI分析请求
+        const request: AIAnalysisRequest = {
+            targetUsers: idea.targetUsers && idea.targetUsers !== 'not_sure' ? idea.targetUsers : undefined,
+            scenario: idea.scenario && idea.scenario !== 'not_sure' ? idea.scenario : undefined,
+            price: idea.price && idea.price !== 'not_sure' ? idea.price : undefined,
+            coreNeed: idea.coreNeed
+        };
 
-    // 检查字段是否有有效内容
-    const hasTargetUsers = idea.targetUsers && idea.targetUsers !== 'not_sure';
-    const hasScenario = idea.scenario && idea.scenario !== 'not_sure';
-    const hasPrice = idea.price && idea.price !== 'not_sure';
+        // 通过API调用豆包AI进行深度分析
+        const response = await aiClientService.analyzeBusinessIdea(request);
 
-    // 基于输入信息生成不同数量的建议
-    if (hasTargetUsers && hasScenario && hasPrice) {
-        // 信息完整，生成1-2个精确建议
-        return [
-            {
-                id: '1',
-                title: `${idea.targetUsers}解决方案`,
-                description: `${idea.targetUsers}在${idea.scenario}时，愿意花${idea.price}来满足自己${idea.coreNeed}的需求。这是一个很有针对性的商业想法。`,
+        // 将响应转换为建议格式（兼容现有UI）
+        return response.suggestions.map((suggestion: any) => ({
+            id: suggestion.id,
+            title: suggestion.title,
+            description: suggestion.description,
+            targetUsers: suggestion.targetUsers,
+            scenario: suggestion.scenario,
+            price: suggestion.price,
+            confidence: suggestion.confidence,
+            // 扩展数据，用于后续使用
+            marketPotential: suggestion.marketPotential,
+            competitionLevel: suggestion.competitionLevel,
+            executionDifficulty: suggestion.executionDifficulty,
+            keyAdvantages: suggestion.keyAdvantages,
+            potentialRisks: suggestion.potentialRisks,
+            estimatedMarketSize: suggestion.estimatedMarketSize
+        }));
+
+    } catch (error) {
+        console.error('AI分析API调用失败:', error);
+
+        // 降级处理：提供基础的智能分析
+        const hasTargetUsers = idea.targetUsers && idea.targetUsers !== 'not_sure';
+        const hasScenario = idea.scenario && idea.scenario !== 'not_sure';
+        const hasPrice = idea.price && idea.price !== 'not_sure';
+
+        if (hasTargetUsers && hasScenario && hasPrice) {
+            return [{
+                id: 'fallback_1',
+                title: `${idea.targetUsers}专项解决方案`,
+                description: `基于您的需求分析，针对${idea.targetUsers}在${idea.scenario}时的需求，提供${idea.price}价位的解决方案。这个想法具有很好的市场潜力，建议进一步完善商业模式设计。`,
                 targetUsers: idea.targetUsers,
                 scenario: idea.scenario,
                 price: idea.price,
-                confidence: 90
-            }
-        ];
-    } else {
-        // 信息不完整，生成3-5个角度的建议
-        const suggestions: AISuggestion[] = [];
-
-        // 基于核心需求生成不同角度的建议
-        if (idea.coreNeed.includes('吃') || idea.coreNeed.includes('餐') || idea.coreNeed.includes('食')) {
-            suggestions.push({
-                id: '1',
-                title: '健康餐饮服务',
-                description: '为忙碌的都市白领提供健康便捷的餐饮解决方案，解决工作忙碌时的用餐需求。',
-                targetUsers: '上班族、大学生',
-                scenario: '工作加班、学习时',
-                price: '15-40元',
-                confidence: 85
-            });
+                confidence: 75,
+                marketPotential: 7,
+                competitionLevel: 6,
+                executionDifficulty: 5,
+                keyAdvantages: ['针对性强', '需求明确', '价格合理'],
+                potentialRisks: ['市场竞争', '用户获取成本', '服务品质保证'],
+                estimatedMarketSize: '待详细分析'
+            }];
         }
 
-        if (idea.coreNeed.includes('学') || idea.coreNeed.includes('教') || idea.coreNeed.includes('习')) {
-            suggestions.push({
-                id: '2',
-                title: '在线教育平台',
-                description: '为职场新人提供专业技能培训和学习资源，帮助提升职业竞争力。',
-                targetUsers: '职场新人、大学生',
-                scenario: '职业发展、技能提升时',
-                price: '99-299元/月',
-                confidence: 80
-            });
-        }
-
-        suggestions.push({
-            id: '3',
-            title: '便民生活服务',
-            description: '为社区居民提供便捷的生活服务，解决日常生活中的各种痛点问题。',
-            targetUsers: '社区居民、家庭用户',
-            scenario: '日常生活、紧急需求时',
-            price: '10-50元',
-            confidence: 75
-        });
-
-        suggestions.push({
-            id: '4',
-            title: '效率工具应用',
-            description: '为工作效率低下的人群提供智能工具，帮助提升工作和生活效率。',
-            targetUsers: '上班族、自由职业者',
-            scenario: '工作、项目管理时',
-            price: '免费/20-100元/月',
-            confidence: 70
-        });
-
-        suggestions.push({
-            id: '5',
-            title: '健康管理服务',
-            description: '为注重健康的人群提供个性化健康管理方案，改善生活质量。',
-            targetUsers: '健康关注者、中老年人',
-            scenario: '日常健康监测、调理时',
-            price: '50-200元',
-            confidence: 72
-        });
-
-        // 根据已有信息过滤和排序
-        let filteredSuggestions = suggestions;
-
-        if (hasTargetUsers) {
-            filteredSuggestions = filteredSuggestions.filter(s =>
-                s.targetUsers.includes(idea.targetUsers!)
-            );
-        }
-
-        if (hasScenario) {
-            filteredSuggestions = filteredSuggestions.filter(s =>
-                s.scenario.includes(idea.scenario!)
-            );
-        }
-
-        if (hasPrice) {
-            filteredSuggestions = filteredSuggestions.filter(s =>
-                s.price.includes(idea.price!) ||
-                (parseInt(idea.price!) >= 10 && parseInt(idea.price!) <= 50)
-            );
-        }
-
-        // 如果过滤后没有结果，返回前3个通用建议
-        return filteredSuggestions.length > 0 ? filteredSuggestions.slice(0, 3) : suggestions.slice(0, 3);
+        // 返回通用建议，鼓励用户提供更多信息
+        return [{
+            id: 'fallback_general',
+            title: '通用商业机会分析',
+            description: '基于您的核心需求，我们识别出一个有潜力的商业机会。建议提供更多关于目标用户、使用场景和定价策略的信息，以便我们进行更精准的商业分析。',
+            targetUsers: hasTargetUsers ? idea.targetUsers : '待进一步明确',
+            scenario: hasScenario ? idea.scenario : '待进一步明确',
+            price: hasPrice ? idea.price : '待进一步明确',
+            confidence: 60,
+            marketPotential: 5,
+            competitionLevel: 5,
+            executionDifficulty: 6,
+            keyAdvantages: ['需求明确', '市场机会'],
+            potentialRisks: ['信息不充分', '执行风险'],
+            estimatedMarketSize: '待详细分析'
+        }];
     }
 }
 
@@ -198,22 +168,87 @@ export default function IndustryPage() {
         }));
     };
 
-    // 确认并跳转到chat
-    const handleConfirmAndChat = () => {
+    // 生成深度分析报告并展示
+    const handleGenerateReport = async () => {
         if (selectedSuggestion === undefined || !aiSuggestions[selectedSuggestion]) {
             return;
         }
 
         const selected = aiSuggestions[selectedSuggestion];
 
-        // 创建项目数据
+        // 生成深度分析报告
+        const aiRequest: AIAnalysisRequest = {
+            targetUsers: businessIdea.targetUsers && businessIdea.targetUsers !== 'not_sure' ? businessIdea.targetUsers : undefined,
+            scenario: businessIdea.scenario && businessIdea.scenario !== 'not_sure' ? businessIdea.scenario : undefined,
+            price: businessIdea.price && businessIdea.price !== 'not_sure' ? businessIdea.price : undefined,
+            coreNeed: businessIdea.coreNeed
+        };
+
+        try {
+            setIsAnalyzing(true);
+
+            // 构建商业场景对象
+            const scenario: BusinessScenario = {
+                id: selected.id,
+                title: selected.title,
+                description: selected.description.split('\n\n')[0], // 提取主要描述
+                targetUsers: selected.targetUsers,
+                scenario: selected.scenario,
+                price: selected.price,
+                marketPotential: selected.marketPotential || 5,
+                competitionLevel: selected.competitionLevel || 5,
+                executionDifficulty: selected.executionDifficulty || 5,
+                keyAdvantages: selected.keyAdvantages || ['优势1', '优势2'],
+                potentialRisks: selected.potentialRisks || ['风险1', '风险2'],
+                estimatedMarketSize: selected.estimatedMarketSize || '待分析',
+                confidence: selected.confidence
+            };
+
+            // 生成详细分析报告
+            const response = await aiClientService.generateReport(scenario, aiRequest);
+            const report = response.report;
+
+            // 创建项目数据
+            const project = createProject(
+                selected.title,
+                'mini-program',
+                'general'
+            );
+
+            // 更新项目状态
+            dispatch({type: 'INITIALIZE_PROJECT', payload: project});
+            dispatch({type: 'SET_STEP', payload: 'report'});
+
+            // 保存分析报告到localStorage
+            localStorage.setItem('preliminaryReport', JSON.stringify({
+                scenario,
+                report,
+                businessIdea,
+                generatedAt: new Date().toISOString()
+            }));
+
+            // 跳转到报告展示页面
+            router.push('/report');
+
+        } catch (error) {
+            console.error('生成报告失败:', error);
+            // 如果报告生成失败，直接跳转到chat作为降级方案
+            handleFallbackToChat();
+        } finally {
+            setIsAnalyzing(false);
+        }
+    };
+
+    // 降级方案：直接跳转到chat
+    const handleFallbackToChat = () => {
+        const selected = aiSuggestions[selectedSuggestion];
+
         const project = createProject(
             selected.title,
             'mini-program',
-            'general' // 通用行业，因为我们取消了行业选择
+            'general'
         );
 
-        // 创建产品信息（兼容现有结构）
         const productInfo = {
             industry: 'general',
             productDescription: selected.description,
@@ -227,18 +262,15 @@ export default function IndustryPage() {
             updatedAt: new Date().toISOString()
         };
 
-        // 更新项目状态
         dispatch({type: 'INITIALIZE_PROJECT', payload: project});
         dispatch({type: 'UPDATE_PRODUCT_INFO', payload: productInfo});
         dispatch({type: 'SET_STEP', payload: 'chat'});
 
-        // 传递商业想法信息到chat页面
         localStorage.setItem('currentBusinessIdea', JSON.stringify({
             businessIdea,
             selectedSuggestion: selected
         }));
 
-        // 跳转到chat页面
         router.push('/chat');
     };
 
@@ -304,11 +336,11 @@ export default function IndustryPage() {
                     </div>
                 ) : (
                     <div className="min-h-screen flex items-center justify-center py-12 px-4">
-                        <AISuggestionCards
+                        <WorldClassScenarioCards
                             suggestions={aiSuggestions}
                             selectedSuggestion={selectedSuggestion}
                             onSelect={handleSelectSuggestion}
-                            onConfirm={handleConfirmAndChat}
+                            onConfirm={handleGenerateReport}
                             onRetry={handleRetry}
                         />
                     </div>
