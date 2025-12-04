@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/Button';
 import { Card, CardHeader, CardContent } from '@/components/ui/Card';
 import { useProject } from '@/contexts/ProjectContext';
-import { Download, ArrowLeft, FileText, Code, Share, Check } from 'lucide-react';
+import { Download, ArrowLeft, FileText, Code, Share, Check, Lightbulb } from 'lucide-react';
 
 export default function ExportPage() {
   const [isExporting, setIsExporting] = useState(false);
@@ -411,7 +411,8 @@ export default function ExportPage() {
             </div>
 
             <div className="mt-4 text-xs text-blue-600">
-              <p>💡 提示: HTML格式可在浏览器中直接打开，也适合打印和分享</p>
+              <Lightbulb className="w-4 h-4 inline mr-2 text-blue-500" />
+              提示: HTML格式可在浏览器中直接打开，也适合打印和分享</p>
             </div>
           </CardContent>
         </Card>

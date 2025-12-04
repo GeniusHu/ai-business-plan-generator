@@ -104,13 +104,13 @@ export default function ProfilePage() {
     // 简单的行业图标映射
     const iconMap: { [key: string]: string } = {
       'ecommerce': '🛒',
-      'tools': '🛠️',
-      'content': '📱',
+      'tools': 'tools',
+      'content': 'mobile',
       'social': '👥',
       'local-life': '🏪',
       'education': '📚',
       'health': '🏥',
-      'ai-tools': '🤖',
+      'ai-tools': 'ai',
       'enterprise': '💼'
     };
     return iconMap[industry] || '📄';

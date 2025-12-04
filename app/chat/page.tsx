@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/Button';
 import { useProject } from '@/contexts/ProjectContext';
 import { ChatMessage, ChatSession, ProductInfo } from '@/types';
 import { analyzeProductCompleteness, generateNextQuestion } from '@/lib/product-analysis';
-import { Send, Download, CheckCircle, AlertCircle, Clock } from 'lucide-react';
+import { Send, Download, CheckCircle, AlertCircle, Clock, Bot, Lightbulb } from 'lucide-react';
 
 export default function ChatPage() {
   const router = useRouter();
@@ -27,14 +27,56 @@ export default function ChatPage() {
 
   // 获取产品信息
   useEffect(() => {
-    // 从localStorage恢复productInfo
-    const saved = localStorage.getItem('productInfo');
-    if (saved) {
+    // 首先尝试从industry页面获取新的商业想法数据
+    const businessIdeaData = localStorage.getItem('currentBusinessIdea');
+    if (businessIdeaData) {
       try {
-        const savedData = JSON.parse(saved);
-        setProductInfo(savedData);
+        const { businessIdea, selectedSuggestion } = JSON.parse(businessIdeaData);
+
+        // 创建兼容的ProductInfo数据结构
+        const productInfoFromIdea = {
+          industry: 'general',
+          productDescription: selectedSuggestion.description,
+          usageScenario: selectedSuggestion.scenario,
+          targetUsers: selectedSuggestion.targetUsers,
+          solution: `通过${selectedSuggestion.title}来解决用户的需求`,
+          revenueModel: `定价策略：${selectedSuggestion.price}`,
+          currentStep: 6,
+          isCompleted: true,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        };
+
+        setProductInfo(productInfoFromIdea);
+
+        // 清理临时数据
+        localStorage.removeItem('currentBusinessIdea');
+
+        // 添加欢迎消息
+        const welcomeMessage: ChatMessage = {
+          id: `welcome_${Date.now()}`,
+          role: 'assistant',
+          content: `你好！我看到你对${selectedSuggestion.title}很有想法。让我来帮助你完善这个商业计划。\n\n你的想法是：${selectedSuggestion.description}\n\n我们可以一起讨论：\n• 目标用户的具体需求\n• 产品功能和特色\n• 盈利模式的细节\n• 市场竞争分析\n\n你有什么想了解的吗？`,
+          timestamp: new Date().toISOString()
+        };
+
+        setMessages([welcomeMessage]);
+
       } catch (error) {
-        console.error('Failed to load product info:', error);
+        console.error('Failed to load business idea data:', error);
+      }
+    }
+
+    // 如果没有新的商业想法数据，使用旧的方式
+    if (!productInfo) {
+      const saved = localStorage.getItem('productInfo');
+      if (saved) {
+        try {
+          const savedData = JSON.parse(saved);
+          setProductInfo(savedData);
+        } catch (error) {
+          console.error('Failed to load product info:', error);
+        }
       }
     }
   }, []);
@@ -99,7 +141,7 @@ export default function ChatPage() {
 - 完整度评分：${analysis.completeness}%
 - 需要补充的方面：${analysis.missingAspects.length > 0 ? analysis.missingAspects.join('、') : '暂无'}
 
-💡 **改进建议：**
+<Lightbulb className="w-5 h-5 inline mr-2 text-blue-500" /> **改进建议：**
 ${analysis.recommendations.map((rec: string) => `• ${rec}`).join('\n')}
 
 ${analysis.isReadyToGenerate ?
@@ -245,12 +287,12 @@ ${analysis.isReadyToGenerate ?
 
   return (
     <div className="min-h-screen relative overflow-hidden">
-      {/* 高质量背景图片 */}
+      {/* 世界级AI对话页面背景 - 智能科技场景 */}
       <div className="absolute inset-0">
         <div
           className="absolute inset-0 bg-cover bg-center bg-no-repeat"
           style={{
-            backgroundImage: `url("https://images.unsplash.com/photo-1531297484001-80022131f5a1?q=80&w=2940&auto=format&fit=crop")`
+            backgroundImage: `url("https://images.unsplash.com/photo-1677442136019-21780ecad995?q=80&w=2940&auto=format&fit=crop")`
           }}
         ></div>
 
@@ -269,7 +311,7 @@ ${analysis.isReadyToGenerate ?
           <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
             <div className="flex items-center gap-4">
               <div className="w-16 h-16 bg-gradient-to-r from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center shadow-lg">
-                <span className="text-2xl">🤖</span>
+                <Bot className="w-8 h-8 text-blue-600" />
               </div>
               <div>
                 <h1 className="text-2xl lg:text-3xl font-bold text-gray-900">
@@ -437,7 +479,8 @@ ${analysis.isReadyToGenerate ?
                   className="px-3 py-1 bg-gray-100 hover:bg-gray-200 text-gray-600 text-xs rounded-full transition-colors"
                   disabled={isLoading}
                 >
-                  💡 {suggestion}
+                  <Lightbulb className="w-4 h-4 inline mr-2 text-blue-500" />
+                  {suggestion}
                 </button>
               ))}
             </div>
@@ -462,7 +505,7 @@ ${analysis.isReadyToGenerate ?
               </Button>
             </div>
             <p className="text-sm text-gray-600 mt-3">
-              ✨ 你的产品构思已经完善，可以开始生成高质量商业计划了！
+              <CheckCircle className="w-5 h-5 inline mr-2 text-green-500" /> 你的产品构思已经完善，可以开始生成高质量商业计划了！
             </p>
           </div>
         )}

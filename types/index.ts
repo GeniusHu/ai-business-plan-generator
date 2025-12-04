@@ -171,6 +171,36 @@ export interface UserProgress {
 }
 
 /**
+ * 商业想法填空题结构
+ * 用于快速输入和解析用户的核心商业想法
+ */
+export interface BusinessIdea {
+  targetUsers: string | 'not_sure';             // 目标用户（可选填）
+  scenario: string | 'not_sure';                // 使用场景（可选填）
+  price: string | 'not_sure';                   // 价格范围（可选填）
+  coreNeed: string;                             // 核心需求（必填）
+
+  // AI分析结果
+  aiSuggestions?: AISuggestion[];               // AI生成的建议示例
+  selectedSuggestion?: number;                  // 用户选择的建议索引
+  isAnalyzed?: boolean;                         // 是否已完成AI分析
+}
+
+/**
+ * AI建议示例结构
+ * AI为用户商业想法生成的具体示例
+ */
+export interface AISuggestion {
+  id: string;                                   // 建议唯一ID
+  title: string;                                // 建议标题
+  description: string;                          // 完整描述
+  targetUsers: string;                          // 目标用户
+  scenario: string;                             // 使用场景
+  price: string;                                // 价格范围
+  confidence: number;                          // AI置信度 0-100
+}
+
+/**
  * 导出选项配置
  * 定义项目导出的格式和内容
  * 类似于Android中的导出设置类

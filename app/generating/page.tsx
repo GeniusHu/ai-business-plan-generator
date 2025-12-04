@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useProject } from '@/contexts/ProjectContext';
 import { BusinessModelCanvas } from '@/types';
 import { generateBusinessCanvas } from '@/lib/ai';
+import { CheckCircle } from 'lucide-react';
 
 interface GeneratingStep {
   id: number;
@@ -34,21 +35,21 @@ const generatingSteps: GeneratingStep[] = [
     title: '设计价值主张',
     description: '提炼产品核心竞争优势',
     status: 'pending',
-    icon: '💎'
+    icon: 'gem'
   },
   {
     id: 4,
     title: '规划核心功能',
     description: '设计MVP版本功能架构',
     status: 'pending',
-    icon: '⚙️'
+    icon: 'settings'
   },
   {
     id: 5,
     title: '制定盈利模式',
     description: '设计可持续的商业变现方式',
     status: 'pending',
-    icon: '💰'
+    icon: 'finance'
   },
   {
     id: 6,
@@ -349,7 +350,8 @@ export default function GeneratingPage() {
         {isComplete && (
           <div className="text-center p-6 bg-green-50 border border-green-200 rounded-xl">
             <div className="text-green-600 text-lg font-semibold mb-2">
-              🎉 商业计划生成完成！
+              <CheckCircle className="w-6 h-6 inline mr-2 text-green-500" />
+              商业计划生成完成！
             </div>
             <p className="text-gray-600">
               正在跳转到画布编辑器...

@@ -13,7 +13,7 @@ export const industries: IndustryTemplate[] = [
   {
     id: 'ecommerce',
     name: '电商',
-    icon: '🛒',
+    icon: 'shopping',
     description: '购物、团购、二手交易等',
     targetUsers: ['消费者', '商家', '品牌方'],
     commonPainPoints: [
@@ -29,7 +29,7 @@ export const industries: IndustryTemplate[] = [
   {
     id: 'tools',
     name: '工具类',
-    icon: '🛠️',
+    icon: 'tools',
     description: '实用工具、效率提升等',
     targetUsers: ['上班族', '学生', '自由职业者'],
     commonPainPoints: [
@@ -45,7 +45,7 @@ export const industries: IndustryTemplate[] = [
   {
     id: 'content',
     name: '内容/资讯',
-    icon: '📱',
+    icon: 'mobile',
     description: '新闻、知识分享、娱乐内容等',
     targetUsers: ['内容消费者', '内容创作者', '广告主'],
     commonPainPoints: [
@@ -61,7 +61,7 @@ export const industries: IndustryTemplate[] = [
   {
     id: 'social',
     name: '社区/社交',
-    icon: '👥',
+    icon: 'users',
     description: '兴趣社区、社交平台等',
     targetUsers: ['年轻人', '兴趣爱好者', 'KOL'],
     commonPainPoints: [
@@ -77,7 +77,7 @@ export const industries: IndustryTemplate[] = [
   {
     id: 'local-life',
     name: '本地生活',
-    icon: '🏪',
+    icon: 'home',
     description: '外卖、家政、本地服务等',
     targetUsers: ['本地居民', '商家', '服务提供者'],
     commonPainPoints: [
@@ -93,7 +93,7 @@ export const industries: IndustryTemplate[] = [
   {
     id: 'education',
     name: '教育',
-    icon: '📚',
+    icon: 'settings',
     description: '在线学习、培训课程等',
     targetUsers: ['学生', '职场人士', '家长', '老师'],
     commonPainPoints: [
@@ -109,7 +109,7 @@ export const industries: IndustryTemplate[] = [
   {
     id: 'health',
     name: '健康医疗',
-    icon: '🏥',
+    icon: 'shield',
     description: '健康管理、医疗服务等',
     targetUsers: ['患者', '医生', '健康关注者'],
     commonPainPoints: [
@@ -125,7 +125,7 @@ export const industries: IndustryTemplate[] = [
   {
     id: 'ai-tools',
     name: 'AI工具',
-    icon: '🤖',
+    icon: 'ai',
     description: 'AI助手、智能工具等',
     targetUsers: ['职场人士', '创作者', '开发者', '学生'],
     commonPainPoints: [
@@ -141,7 +141,7 @@ export const industries: IndustryTemplate[] = [
   {
     id: 'enterprise',
     name: '企业服务',
-    icon: '💼',
+    icon: 'analytics',
     description: 'SaaS软件、办公协同等',
     targetUsers: ['中小企业', '创业公司', '企业团队'],
     commonPainPoints: [
@@ -343,21 +343,21 @@ export const projectTypes = [
   {
     id: 'mini-program',                                    // 小程序类型
     name: '小程序',                                        // 显示名称
-    icon: '🟦',                                            // 图标
+    icon: 'mobile',                                        // 图标
     description: '适合轻量业务、微信生态流量',              // 描述
     advantages: ['开发成本低', '获客容易', '用户习惯好']     // 优势列表
   },
   {
     id: 'app',                                             // APP应用类型
     name: 'APP',                                           // 显示名称
-    icon: '🟧',                                            // 图标
+    icon: 'smartphone',                                    // 图标
     description: '适合重交互和多功能应用',                  // 描述
     advantages: ['功能强大', '用户体验好', '品牌独立']       // 优势列表
   },
   {
     id: 'cross-platform',                                  // 跨平台类型
     name: '跨端',                                          // 显示名称
-    icon: '🟪',                                            // 图标
+    icon: 'monitor',                                       // 图标
     description: '覆盖更多用户场景',                        // 描述
     advantages: ['用户覆盖广', '数据互通', '维护成本低']     // 优势列表
   },
