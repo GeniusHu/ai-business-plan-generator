@@ -15,6 +15,14 @@ export interface AIAnalysisRequest {
     coreNeed: string;
 }
 
+export interface AIAnalysisRejection {
+    shouldAnalyze: false;
+    reason: string;
+    suggestion: string;
+}
+
+export type AIAnalysisResult = BusinessScenario[] | AIAnalysisRejection;
+
 export interface BusinessScenario {
     id: string;
     title: string;
@@ -111,7 +119,7 @@ class AIService {
     /**
      * 分析商业想法并生成典型场景
      */
-    async analyzeBusinessIdea(request: AIAnalysisRequest): Promise<BusinessScenario[]> {
+    async analyzeBusinessIdea(request: AIAnalysisRequest): Promise<AIAnalysisResult> {
         const prompt = this.buildScenarioAnalysisPrompt(request);
 
         const messages: AIMessage[] = [
@@ -155,7 +163,7 @@ class AIService {
      */
     private buildScenarioAnalysisPrompt(request: AIAnalysisRequest): string {
         return `
-请深度分析以下商业想法，并生成3-5个高质量的商业应用场景：
+请首先评估以下用户输入的商业想法质量，然后决定是否进行分析。请采用宽松的标准，尽量帮助用户进行商业分析。
 
 用户输入信息：
 ${request.targetUsers ? `目标用户: ${request.targetUsers}` : '目标用户: 待定'}
@@ -163,26 +171,27 @@ ${request.scenario ? `使用场景: ${request.scenario}` : '使用场景: 待定
 ${request.price ? `价格范围: ${request.price}` : '价格范围: 待定'}
 核心需求: ${request.coreNeed}
 
-请分析这个商业想法的核心价值，然后生成3-5个不同的商业应用场景。
+请按以下步骤处理：
 
-每个场景需要包含：
-1. 场景标题（简洁明了，突出商业价值）
-2. 场景描述（200字左右，详细描述商业模式）
-3. 目标用户群体（具体描述用户特征）
-4. 具体使用场景（详细描述用户在什么情况下使用）
-5. 定价策略（具体的收费方式和价格范围）
-6. 市场潜力评估（1-10分，10分为最高）
-7. 竞争激烈程度（1-10分，10分为最高）
-8. 执行难度（1-10分，10分为最难）
-9. 核心竞争优势（3-5个关键优势）
-10. 潜在风险（3-5个主要风险）
-11. 估算市场规模
-12. 成功置信度（1-100）
+步骤1 - 质量评估：
+只有在以下极端情况下才拒绝分析：
+- 核心需求描述少于2个字符（完全没有意义）
+- 内容完全无法理解（如乱码、无意义字符）
+- 明显的测试输入或恶意的无意义内容
 
-请确保每个场景都有显著差异，代表不同的商业策略和切入点。回答时要体现世界级的商业分析水准。
+步骤2 - 正常分析：
+对于绝大多数有价值的输入，请继续分析并生成3-5个高质量的商业应用场景。
 
-请按以下JSON格式返回：
+拒绝信息格式（仅用于极端无意义输入）：
 {
+  "shouldAnalyze": false,
+  "reason": "具体拒绝原因",
+  "suggestion": "改进建议"
+}
+
+正常分析格式：
+{
+  "shouldAnalyze": true,
   "scenarios": [
     {
       "title": "场景标题",
@@ -196,10 +205,26 @@ ${request.price ? `价格范围: ${request.price}` : '价格范围: 待定'}
       "keyAdvantages": ["优势1", "优势2", "优势3"],
       "potentialRisks": ["风险1", "风险2", "风险3"],
       "estimatedMarketSize": "市场规模估算",
-      "confidence": 85
+      "score": 85
     }
   ]
 }
+
+每个场景需要包含：
+1. 场景标题（简洁明了，突出商业价值）
+2. 场景描述（200字左右，详细描述商业模式）
+3. 目标用户群体（具体描述用户特征）
+4. 具体使用场景（详细描述用户在什么情况下使用）
+5. 定价策略（具体的收费方式和价格范围）
+6. 市场潜力评估（1-10分，10分为最高）
+7. 竞争激烈程度（1-10分，10分为最高）
+8. 执行难度（1-10分，10分为最难）
+9. 核心竞争优势（3-5个关键优势）
+10. 潜在风险（3-5个主要风险）
+11. 估算市场规模
+12. 总体评分（1-100）
+
+请确保每个场景都有显著差异，代表不同的商业策略和切入点。回答时要体现世界级的专业商业分析水准。
 `;
     }
 
@@ -287,7 +312,7 @@ ${originalInput.price ? `价格预期：${originalInput.price}` : ''}
     /**
      * 解析场景分析响应
      */
-    private parseScenariosResponse(response: string): BusinessScenario[] {
+    private parseScenariosResponse(response: string): AIAnalysisResult {
         try {
             // 尝试提取JSON
             const jsonMatch = response.match(/\{[\s\S]*\}/);
@@ -297,6 +322,16 @@ ${originalInput.price ? `价格预期：${originalInput.price}` : ''}
 
             const parsed = JSON.parse(jsonMatch[0]);
 
+            // 检查是否应该分析
+            if (parsed.shouldAnalyze === false) {
+                return {
+                    shouldAnalyze: false,
+                    reason: parsed.reason || '输入内容不足以进行有效分析',
+                    suggestion: parsed.suggestion || '请提供更详细的商业想法描述'
+                };
+            }
+
+            // 正常分析逻辑
             if (!parsed.scenarios || !Array.isArray(parsed.scenarios)) {
                 throw new Error('AI响应格式错误：缺少场景数据');
             }
@@ -423,7 +458,7 @@ ${originalInput.price ? `价格预期：${originalInput.price}` : ''}
             risks: {
                 marketRisks: ['市场风险待评估'],
                 executionRisks: ['执行风险待识别'],
-                mitigationStrategies: '风险缓解策略待制定'
+                mitigationStrategies: ['风险缓解策略待制定']
             }
         };
     }

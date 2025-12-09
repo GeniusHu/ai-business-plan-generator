@@ -33,6 +33,19 @@ export function WorldClassScenarioCards({
         setSelectedDetailSuggestion(null);
     };
 
+    const handleConfirm = async () => {
+        if (selectedSuggestion === undefined || isGenerating) {
+            return;
+        }
+
+        setIsGenerating(true);
+        try {
+            await onConfirm();
+        } finally {
+            setIsGenerating(false);
+        }
+    };
+
     const getScoreColor = (score: number) => {
         if (score >= 8) return 'text-green-600 bg-green-50 border-green-200';
         if (score >= 6) return 'text-yellow-600 bg-yellow-50 border-yellow-200';
@@ -267,28 +280,46 @@ export function WorldClassScenarioCards({
                 </button>
 
                 <button
-                    onClick={onConfirm}
-                    disabled={selectedSuggestion === undefined}
+                    onClick={handleConfirm}
+                    disabled={selectedSuggestion === undefined || isGenerating}
                     className={`group relative flex items-center gap-4 px-12 py-4 rounded-xl font-semibold text-lg transition-all duration-300 transform hover:scale-105 ${
-                        selectedSuggestion !== undefined
+                        selectedSuggestion !== undefined && !isGenerating
                             ? 'bg-gradient-to-r from-emerald-500 via-blue-600 to-purple-700 hover:from-emerald-600 hover:via-blue-700 hover:to-purple-800 shadow-xl hover:shadow-2xl text-white border-transparent'
                             : 'bg-gray-100 border-gray-200 cursor-not-allowed opacity-50'
                     }`}
                 >
                     {selectedSuggestion !== undefined && (
                         <>
-                            <div className="relative flex items-center gap-3">
-                                <span>生成深度分析报告</span>
-                                <svg className="w-5 h-5 transform group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
-                                </svg>
-                            </div>
+                            {isGenerating ? (
+                                <>
+                                    <div className="relative flex items-center gap-3">
+                                        {/* 旋转加载动画 */}
+                                        <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                        </svg>
+                                        <span>正在生成报告...</span>
+                                    </div>
 
-                            {/* 成功指示器动画 */}
-                            <div className="absolute -top-2 -right-2 w-4 h-4 bg-emerald-400 rounded-full animate-ping"></div>
+                                    {/* 按钮光效 */}
+                                    <div className="absolute inset-0 bg-gradient-to-r from-white/20 via-transparent to-white/10 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                                </>
+                            ) : (
+                                <>
+                                    <div className="relative flex items-center gap-3">
+                                        <span>生成深度分析报告</span>
+                                        <svg className="w-5 h-5 transform group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                                        </svg>
+                                    </div>
 
-                            {/* 按钮光效 */}
-                            <div className="absolute inset-0 bg-gradient-to-r from-white/20 via-transparent to-white/10 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                                    {/* 成功指示器动画 */}
+                                    <div className="absolute -top-2 -right-2 w-4 h-4 bg-emerald-400 rounded-full animate-ping"></div>
+
+                                    {/* 按钮光效 */}
+                                    <div className="absolute inset-0 bg-gradient-to-r from-white/20 via-transparent to-white/10 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                                </>
+                            )}
                         </>
                     )}
                     {selectedSuggestion === undefined && (

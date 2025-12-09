@@ -3,7 +3,8 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useProject } from '@/contexts/ProjectContext';
-import { BusinessScenario, PreliminaryReport } from '@/services/aiService';
+import { BusinessScenario } from '@/types';
+import { PreliminaryReport } from '@/services/aiService';
 
 interface ReportData {
     scenario: BusinessScenario;
@@ -20,20 +21,33 @@ export default function ReportPage() {
     const [isExporting, setIsExporting] = useState(false);
 
     useEffect(() => {
+        console.log('📄 /report 页面加载，开始读取localStorage数据');
         const saved = localStorage.getItem('preliminaryReport');
+        console.log('💾 localStorage中的preliminaryReport数据:', saved);
+
         if (saved) {
             try {
+                console.log('🔄 解析报告数据...');
                 const data = JSON.parse(saved);
+                console.log('✅ 报告数据解析成功:', data);
                 setReportData(data);
-                localStorage.removeItem('preliminaryReport'); // 清理临时数据
+                console.log('✅ 报告数据已加载完成');
             } catch (error) {
-                console.error('Failed to load report data:', error);
+                console.error('💥 解析报告数据失败:', error);
+                console.error('❌ 错误类型:', error.constructor.name);
+                console.error('❌ 错误消息:', error.message);
+                console.log('🔄 重定向到 /industry 页面');
                 router.push('/industry');
             }
         } else {
+            console.log('❌ localStorage中没有找到preliminaryReport数据');
+            console.log('🔄 重定向到 /industry 页面');
             router.push('/industry');
         }
     }, [router]);
+
+    // 暂时不清理localStorage数据，让用户可以在开发模式下正常查看报告
+    // 在生产环境中，可以考虑在用户主动离开时清理
 
     if (!reportData) {
         return (

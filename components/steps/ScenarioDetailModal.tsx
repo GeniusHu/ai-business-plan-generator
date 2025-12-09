@@ -41,7 +41,7 @@ export function ScenarioDetailModal({ suggestion, isOpen, onClose }: ScenarioDet
 
                 {/* 弹窗头部 */}
                 <div className="p-8 pb-6 border-b border-gray-100">
-                    <div className="flex items-start justify-between">
+                    <div className="flex items-center justify-between">
                         <div className="flex-1">
                             <h2 className="text-2xl font-bold text-gray-900 mb-3">
                                 {suggestion.title}
@@ -57,7 +57,7 @@ export function ScenarioDetailModal({ suggestion, isOpen, onClose }: ScenarioDet
                         {/* 关闭按钮 */}
                         <button
                             onClick={onClose}
-                            className="ml-4 p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full transition-colors"
+                            className="ml-4 p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full transition-colors flex items-center justify-center"
                         >
                             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />

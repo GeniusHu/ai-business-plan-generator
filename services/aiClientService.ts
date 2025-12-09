@@ -11,7 +11,11 @@ export interface AIAnalysisRequest {
 }
 
 export interface AnalysisResponse {
-    suggestions: any[];
+    success: boolean;
+    suggestions?: any[];
+    errorCode?: string;
+    message?: string;
+    suggestion?: string;
 }
 
 export interface ReportResponse {
@@ -57,6 +61,11 @@ export class AIClientService {
      */
     async generateReport(scenario: any, businessIdea: AIAnalysisRequest): Promise<ReportResponse> {
         try {
+            console.log('🤖 aiClientService.generateReport 开始执行');
+            console.log('📤 发送的场景数据:', scenario);
+            console.log('📤 发送的商业想法:', businessIdea);
+            console.log('🌐 请求URL:', `${this.baseUrl}/api/ai/report`);
+
             const response = await fetch(`${this.baseUrl}/api/ai/report`, {
                 method: 'POST',
                 headers: {
@@ -65,14 +74,21 @@ export class AIClientService {
                 body: JSON.stringify({ scenario, businessIdea }),
             });
 
+            console.log('📡 API响应状态:', response.status, response.statusText);
+
             if (!response.ok) {
                 const errorData = await response.json();
+                console.error('❌ API调用失败，错误数据:', errorData);
                 throw new Error(errorData.error || 'API调用失败');
             }
 
-            return await response.json();
+            const result = await response.json();
+            console.log('✅ 报告生成成功，响应数据:', result);
+            return result;
         } catch (error) {
-            console.error('客户端报告生成失败:', error);
+            console.error('💥 客户端报告生成失败，详细错误:', error);
+            console.error('❌ 错误类型:', error.constructor.name);
+            console.error('❌ 错误消息:', error.message);
             throw error;
         }
     }

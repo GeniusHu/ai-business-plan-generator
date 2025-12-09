@@ -3,7 +3,7 @@
 import {useState, useEffect} from 'react';
 import {useRouter} from 'next/navigation';
 import {useProject, createProject} from '@/contexts/ProjectContext';
-import {BusinessIdea, AISuggestion} from '@/types';
+import {BusinessIdea, AISuggestion, BusinessScenario} from '@/types';
 import {BusinessIdeaInput} from '@/components/steps/BusinessIdeaInput';
 import {WorldClassScenarioCards} from '@/components/steps/WorldClassScenarioCards';
 import {aiClientService, AIAnalysisRequest} from '@/services/aiClientService';
@@ -24,7 +24,19 @@ async function analyzeBusinessIdea(idea: BusinessIdea): Promise<AISuggestion[]> 
         // 通过API调用豆包AI进行深度分析
         const response = await aiClientService.analyzeBusinessIdea(request);
 
+        // 检查分析是否成功
+        if (!response.success) {
+            if (response.errorCode === 'INSUFFICIENT_INPUT') {
+                throw new Error(`${response.message}${response.suggestion ? '\n建议：' + response.suggestion : ''}`);
+            }
+            throw new Error(response.message || 'AI分析失败');
+        }
+
         // 将响应转换为建议格式（兼容现有UI）
+        if (!response.suggestions) {
+            throw new Error('AI分析返回空结果');
+        }
+
         return response.suggestions.map((suggestion: any) => ({
             id: suggestion.id,
             title: suggestion.title,
@@ -32,7 +44,7 @@ async function analyzeBusinessIdea(idea: BusinessIdea): Promise<AISuggestion[]> 
             targetUsers: suggestion.targetUsers,
             scenario: suggestion.scenario,
             price: suggestion.price,
-            confidence: suggestion.confidence,
+            score: suggestion.score,
             // 扩展数据，用于后续使用
             marketPotential: suggestion.marketPotential,
             competitionLevel: suggestion.competitionLevel,
@@ -58,7 +70,7 @@ async function analyzeBusinessIdea(idea: BusinessIdea): Promise<AISuggestion[]> 
                 targetUsers: idea.targetUsers,
                 scenario: idea.scenario,
                 price: idea.price,
-                confidence: 75,
+                score: 75,
                 marketPotential: 7,
                 competitionLevel: 6,
                 executionDifficulty: 5,
@@ -76,7 +88,7 @@ async function analyzeBusinessIdea(idea: BusinessIdea): Promise<AISuggestion[]> 
             targetUsers: hasTargetUsers ? idea.targetUsers : '待进一步明确',
             scenario: hasScenario ? idea.scenario : '待进一步明确',
             price: hasPrice ? idea.price : '待进一步明确',
-            confidence: 60,
+            score: 60,
             marketPotential: 5,
             competitionLevel: 5,
             executionDifficulty: 6,
@@ -171,10 +183,14 @@ export default function IndustryPage() {
     // 生成深度分析报告并展示
     const handleGenerateReport = async () => {
         if (selectedSuggestion === undefined || !aiSuggestions[selectedSuggestion]) {
+            console.log('❌ 没有选择建议或建议不存在');
             return;
         }
 
         const selected = aiSuggestions[selectedSuggestion];
+        console.log('🚀 开始生成深度分析报告');
+        console.log('📋 选中的建议:', selected);
+        console.log('💭 原始商业想法:', businessIdea);
 
         // 生成深度分析报告
         const aiRequest: AIAnalysisRequest = {
@@ -184,8 +200,11 @@ export default function IndustryPage() {
             coreNeed: businessIdea.coreNeed
         };
 
+        console.log('📤 AI分析请求:', aiRequest);
+
         try {
             setIsAnalyzing(true);
+            console.log('⏳ 开始调用AI生成报告...');
 
             // 构建商业场景对象
             const scenario: BusinessScenario = {
@@ -204,11 +223,16 @@ export default function IndustryPage() {
                 confidence: selected.confidence
             };
 
+            console.log('🏗️ 构建的商业场景:', scenario);
+
             // 生成详细分析报告
+            console.log('🤖 调用aiClientService.generateReport...');
             const response = await aiClientService.generateReport(scenario, aiRequest);
+            console.log('📊 报告生成响应:', response);
             const report = response.report;
 
             // 创建项目数据
+            console.log('🏢 创建项目数据...');
             const project = createProject(
                 selected.title,
                 'mini-program',
@@ -216,33 +240,45 @@ export default function IndustryPage() {
             );
 
             // 更新项目状态
+            console.log('📋 更新项目状态...');
             dispatch({type: 'INITIALIZE_PROJECT', payload: project});
             dispatch({type: 'SET_STEP', payload: 'report'});
 
             // 保存分析报告到localStorage
-            localStorage.setItem('preliminaryReport', JSON.stringify({
+            console.log('💾 保存分析报告到localStorage...');
+            const reportData = {
                 scenario,
                 report,
                 businessIdea,
                 generatedAt: new Date().toISOString()
-            }));
+            };
+            localStorage.setItem('preliminaryReport', JSON.stringify(reportData));
+            console.log('✅ 报告数据已保存:', reportData);
 
             // 跳转到报告展示页面
+            console.log('🔄 跳转到报告展示页面 /report');
             router.push('/report');
 
         } catch (error) {
-            console.error('生成报告失败:', error);
+            console.error('💥 生成报告失败，错误详情:', error);
+            console.error('❌ 错误类型:', error.constructor.name);
+            console.error('❌ 错误消息:', error.message);
+
             // 如果报告生成失败，直接跳转到chat作为降级方案
+            console.log('🚑 执行降级方案，跳转到chat');
             handleFallbackToChat();
         } finally {
+            console.log('🏁 报告生成流程结束');
             setIsAnalyzing(false);
         }
     };
 
     // 降级方案：直接跳转到chat
     const handleFallbackToChat = () => {
+        console.log('🚑 执行降级方案，准备跳转到chat页面');
         const selected = aiSuggestions[selectedSuggestion];
 
+        console.log('📋 为chat准备项目数据...');
         const project = createProject(
             selected.title,
             'mini-program',
@@ -262,15 +298,18 @@ export default function IndustryPage() {
             updatedAt: new Date().toISOString()
         };
 
-        dispatch({type: 'INITIALIZE_PROJECT', payload: project});
-        dispatch({type: 'UPDATE_PRODUCT_INFO', payload: productInfo});
-        dispatch({type: 'SET_STEP', payload: 'chat'});
-
+        console.log('💾 保存chat相关数据到localStorage...');
         localStorage.setItem('currentBusinessIdea', JSON.stringify({
             businessIdea,
             selectedSuggestion: selected
         }));
 
+        console.log('📋 更新项目状态...');
+        dispatch({type: 'INITIALIZE_PROJECT', payload: project});
+        dispatch({type: 'UPDATE_PRODUCT_INFO', payload: productInfo});
+        dispatch({type: 'SET_STEP', payload: 'chat'});
+
+        console.log('🔄 跳转到chat页面 /chat');
         router.push('/chat');
     };
 

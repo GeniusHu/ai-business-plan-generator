@@ -170,6 +170,22 @@ export interface UserProgress {
   projectId?: string;                            // 关联的项目ID（可选）
 }
 
+export interface BusinessScenario {
+  id: string;
+  title: string;
+  description: string;
+  targetUsers: string;
+  scenario: string;
+  price: string;
+  marketPotential: number; // 1-10分
+  competitionLevel: number; // 1-10分
+  executionDifficulty: number; // 1-10分
+  keyAdvantages: string[];
+  potentialRisks: string[];
+  estimatedMarketSize: string;
+  confidence: number;
+}
+
 /**
  * 商业想法填空题结构
  * 用于快速输入和解析用户的核心商业想法
@@ -197,7 +213,7 @@ export interface AISuggestion {
   targetUsers: string;                          // 目标用户
   scenario: string;                             // 使用场景
   price: string;                                // 价格范围
-  confidence: number;                          // AI置信度 0-100
+  score: number;                          // AI评分 0-100
 
   // 世界级分析扩展字段
   marketPotential?: number;                     // 市场潜力评估 1-10

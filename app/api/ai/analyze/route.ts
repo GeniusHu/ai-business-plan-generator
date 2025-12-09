@@ -15,14 +15,27 @@ export async function POST(req: NextRequest) {
     }
 
     // 调用AI服务进行分析
-    const suggestions = await aiService.analyzeBusinessIdea({
+    const result = await aiService.analyzeBusinessIdea({
       targetUsers: businessIdea.targetUsers && businessIdea.targetUsers !== 'not_sure' ? businessIdea.targetUsers : undefined,
       scenario: businessIdea.scenario && businessIdea.scenario !== 'not_sure' ? businessIdea.scenario : undefined,
       price: businessIdea.price && businessIdea.price !== 'not_sure' ? businessIdea.price : undefined,
       coreNeed: businessIdea.coreNeed
     });
 
-    return NextResponse.json({ suggestions });
+    // 检查是否应该分析
+    if (result.shouldAnalyze === false) {
+      return NextResponse.json({
+        success: false,
+        errorCode: 'INSUFFICIENT_INPUT',
+        message: result.reason,
+        suggestion: result.suggestion
+      });
+    }
+
+    return NextResponse.json({
+      success: true,
+      suggestions: result
+    });
   } catch (error) {
     console.error('AI分析API错误:', error);
     return NextResponse.json(
